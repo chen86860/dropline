@@ -21,17 +21,46 @@ struct SettingsView: View {
 
 struct GeneralSettings: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject var updater: UpdaterModel
 
     var body: some View {
         Form {
-            Toggle("上传完成后自动把链接复制到剪贴板", isOn: $state.autoCopyURL)
-            Toggle("复制为 Markdown 格式 ![name](url)", isOn: $state.markdownCopy)
-                .disabled(!state.autoCopyURL)
-            Toggle("隐藏 Dock 图标（仅保留菜单栏图标）", isOn: $state.hideDockIcon)
-            Picker("同时上传数量", selection: $state.maxConcurrent) {
-                ForEach([1, 2, 3, 5, 8], id: \.self) { Text("\($0)").tag($0) }
+            Section {
+                Toggle("上传完成后自动把链接复制到剪贴板", isOn: $state.autoCopyURL)
+                Toggle("复制为 Markdown 格式 ![name](url)", isOn: $state.markdownCopy)
+                    .disabled(!state.autoCopyURL)
+                Toggle("隐藏 Dock 图标（仅保留菜单栏图标）", isOn: $state.hideDockIcon)
+                Picker("同时上传数量", selection: $state.maxConcurrent) {
+                    ForEach([1, 2, 3, 5, 8], id: \.self) { Text("\($0)").tag($0) }
+                }
+                .frame(maxWidth: 240)
             }
-            .frame(maxWidth: 240)
+
+            Section("软件更新") {
+                Toggle("自动检查更新", isOn: $updater.automaticallyChecks)
+                Toggle("自动下载并安装更新", isOn: $updater.automaticallyDownloads)
+                    .disabled(!updater.automaticallyChecks)
+                HStack {
+                    Text("当前版本")
+                    Spacer()
+                    Text(updater.versionString).foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("上次检查")
+                    Spacer()
+                    if let d = updater.lastCheck {
+                        Text(d.formatted(date: .abbreviated, time: .shortened))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("从未").foregroundStyle(.secondary)
+                    }
+                }
+                HStack {
+                    Button("现在检查更新") { updater.checkForUpdates() }
+                        .disabled(!updater.canCheck)
+                    Spacer()
+                }
+            }
         }
         .formStyle(.grouped)
         .padding()

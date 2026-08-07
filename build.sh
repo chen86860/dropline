@@ -6,7 +6,12 @@ cd "$(dirname "$0")"
 ROOT="$(pwd)"
 APP="$ROOT/dist/Dropline.app"
 BUNDLE_ID="dev.emmmm.Dropline"
-VERSION="1.0.0"
+VERSION="${DROPLINE_VERSION:-1.0.0}"
+
+# Sparkle 自动更新
+FEED_URL="https://raw.githubusercontent.com/chen86860/dropline/main/appcast.xml"
+# 与钥匙串里的 EdDSA 私钥配对；用 Tools/sparkle.sh pubkey 可重新打印
+SU_PUBLIC_KEY="F7NNg2b/Lpgv6EprFu5YcR6DApLrwc5yfPOmI7o5hOk="
 
 echo "==> 编译 (release, arm64)"
 swift build -c release --arch arm64
@@ -16,6 +21,14 @@ echo "==> 组装 .app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Dropline"
+
+echo "==> 嵌入 Sparkle.framework"
+SPARKLE_FW=$(find "$ROOT/.build/artifacts" -type d -name "Sparkle.framework" -path "*macos*" | head -1)
+if [ -z "$SPARKLE_FW" ]; then
+  echo "❌ 找不到 Sparkle.framework，先执行：swift package resolve"; exit 1
+fi
+mkdir -p "$APP/Contents/Frameworks"
+cp -R "$SPARKLE_FW" "$APP/Contents/Frameworks/"
 
 echo "==> 生成图标"
 ICONSET="$ROOT/dist/Dropline.iconset"
@@ -51,6 +64,12 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSHighResolutionCapable</key>   <true/>
     <key>NSHumanReadableCopyright</key>  <string>Dropline</string>
 
+    <!-- Sparkle 自动更新 -->
+    <key>SUFeedURL</key>                 <string>${FEED_URL}</string>
+    <key>SUPublicEDKey</key>             <string>${SU_PUBLIC_KEY}</string>
+    <key>SUEnableAutomaticChecks</key>   <true/>
+    <key>SUScheduledCheckInterval</key>  <integer>86400</integer>
+
     <!-- 允许把任意文件拖到 Dock 图标上传 -->
     <key>CFBundleDocumentTypes</key>
     <array>
@@ -84,9 +103,35 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 echo "==> 签名 (ad-hoc)"
-codesign --force --deep --sign - "$APP"
+# Sparkle 内含 XPC Service 与 Autoupdate/Updater.app，必须由内向外逐层签名
+SIGN_ID="${DROPLINE_SIGN_ID:--}"
+# hardened runtime 会启用库验证：ad-hoc 签名下主程序与框架的 Team ID 不一致，
+# 会导致 dyld 拒绝加载 Sparkle。只有用真实 Developer ID 时才开启（公证需要）。
+if [ "$SIGN_ID" = "-" ]; then
+  SIGN_OPTS=()
+  echo "    使用 ad-hoc 签名（本地使用）；发布请设 DROPLINE_SIGN_ID=\"Developer ID Application: ...\""
+else
+  SIGN_OPTS=(--options runtime --timestamp)
+fi
+
+FW="$APP/Contents/Frameworks/Sparkle.framework"
+for nested in \
+  "$FW/Versions/B/XPCServices/"*.xpc \
+  "$FW/Versions/B/Autoupdate" \
+  "$FW/Versions/B/Updater.app"; do
+  [ -e "$nested" ] && codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$nested"
+done
+codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$FW"
+codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$APP"
 
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
+# 打包发布时不要注册 dist/ 里的副本，否则会和 /Applications 里的形成两份注册
+if [ "${DROPLINE_SKIP_REGISTER:-0}" = "1" ]; then
+  echo ""
+  echo "✅ 完成（未注册）：$APP"
+  exit 0
+fi
 
 # 右键「服务」菜单只应有一份注册；同一 Bundle ID 存在多份副本会导致菜单项消失或点击无响应。
 if [ "${1:-}" = "--install" ]; then

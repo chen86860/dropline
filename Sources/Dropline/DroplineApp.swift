@@ -5,6 +5,7 @@ import AppKit
 struct DroplineApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var state = AppState.shared
+    @StateObject private var updater = UpdaterModel()
 
     var body: some Scene {
         WindowGroup(id: "main") {
@@ -13,6 +14,10 @@ struct DroplineApp: App {
         }
         .defaultSize(width: 620, height: 620)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("检查更新…") { updater.checkForUpdates() }
+                    .disabled(!updater.canCheck)
+            }
             CommandGroup(replacing: .newItem) {
                 Button("上传文件…") { state.pickFiles() }
                     .keyboardShortcut("o", modifiers: .command)
@@ -32,12 +37,14 @@ struct DroplineApp: App {
         Settings {
             SettingsView()
                 .environmentObject(state)
+                .environmentObject(updater)
         }
 
         // 系统托盘（菜单栏）
         MenuBarExtra("Dropline", systemImage: "arrow.up.circle") {
             MenuBarContent()
                 .environmentObject(state)
+                .environmentObject(updater)
         }
     }
 }
@@ -46,6 +53,7 @@ struct DroplineApp: App {
 
 struct MenuBarContent: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject var updater: UpdaterModel
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -92,6 +100,8 @@ struct MenuBarContent: View {
             Button("设置…") { state.openSettings() }
                 .keyboardShortcut(",", modifiers: .command)
         }
+        Button("检查更新…") { updater.checkForUpdates() }
+            .disabled(!updater.canCheck)
         Divider()
         Button("退出 Dropline") { NSApp.terminate(nil) }
             .keyboardShortcut("q", modifiers: .command)
