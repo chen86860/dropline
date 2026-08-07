@@ -29,8 +29,11 @@ final class UpdaterModel: ObservableObject {
         controller.updater.publisher(for: \.canCheckForUpdates).assign(to: &$canCheck)
     }
 
+    /// 走 SPUStandardUpdaterController 的标准入口：它会把标准 UI（进度、
+    /// 「已是最新版本」提示、错误提示）完整接上；直接调 updater.checkForUpdates()
+    /// 在无更新时不会给用户任何反馈。
     func checkForUpdates() {
-        controller.updater.checkForUpdates()
+        controller.checkForUpdates(nil)
         lastCheck = controller.updater.lastUpdateCheckDate ?? Date()
     }
 
