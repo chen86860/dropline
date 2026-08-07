@@ -51,6 +51,12 @@ final class AppState: ObservableObject {
     @Published var notifyOnFinish: Bool = true {
         didSet { UserDefaults.standard.set(notifyOnFinish, forKey: "notifyOnFinish") }
     }
+    @Published var finderMenuMode: FinderMenuMode = .default {
+        didSet {
+            UserDefaults.standard.set(finderMenuMode.rawValue, forKey: "finderMenuMode")
+            FinderMenuMode.writeShared(finderMenuMode)
+        }
+    }
 
     /// 菜单栏进度：nil 表示空闲；否则是所有未完成任务的平均进度
     var trayProgress: Double? {
@@ -98,6 +104,10 @@ final class AppState: ObservableObject {
         hideDockIcon = d.bool(forKey: "hideDockIcon")
         maxConcurrent = d.object(forKey: "maxConcurrent") as? Int ?? 3
         notifyOnFinish = d.object(forKey: "notifyOnFinish") as? Bool ?? true
+        finderMenuMode = (d.string(forKey: "finderMenuMode").flatMap(FinderMenuMode.init(rawValue:)))
+            ?? .default
+        // 启动时同步一次：扩展容器可能刚被系统创建，或被用户清理过
+        FinderMenuMode.writeShared(finderMenuMode)
     }
 
     func saveProfiles() {

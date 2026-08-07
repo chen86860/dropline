@@ -2,7 +2,10 @@
 # Sparkle 发布助手
 #
 #   ./Tools/sparkle.sh pubkey            打印 EdDSA 公钥（应与 build.sh 里的 SU_PUBLIC_KEY 一致）
+#   ./Tools/sparkle.sh export-key        导出私钥，用于配置 GitHub Actions 的 secret
 #   ./Tools/sparkle.sh release 1.0.1     构建 → 打包 → 签名 → 生成 appcast → 发 GitHub Release → 推送
+#
+# 也可以在 GitHub 上手动触发 Release workflow 完成同样的事（见 .github/workflows/release.yml）。
 #
 # 私钥保存在登录钥匙串（由 Sparkle 的 generate_keys 创建），不在仓库里。
 set -euo pipefail
@@ -20,6 +23,19 @@ fi
 case "${1:-}" in
 pubkey)
   "$TOOLS/generate_keys" -p
+  ;;
+
+export-key)
+  # 把钥匙串里的 EdDSA 私钥导出成文件，用于配置 GitHub Actions 的
+  # SPARKLE_PRIVATE_KEY secret。文件已在 .gitignore 里，用完请删掉。
+  OUT="$ROOT/sparkle-private-key.txt"
+  "$TOOLS/generate_keys" -x "$OUT"
+  echo ""
+  echo "私钥已导出到：$OUT"
+  echo "接下来："
+  echo "  1. gh secret set SPARKLE_PRIVATE_KEY --repo $REPO < \"$OUT\""
+  echo "     （或到 GitHub → Settings → Secrets and variables → Actions 手动粘贴）"
+  echo "  2. rm \"$OUT\""
   ;;
 
 release)
@@ -105,6 +121,6 @@ PY
   ;;
 
 *)
-  echo "用法: $0 {pubkey|release <版本号>}"; exit 1
+  echo "用法: $0 {pubkey|export-key|release <版本号>}"; exit 1
   ;;
 esac

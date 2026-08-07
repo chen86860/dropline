@@ -148,18 +148,33 @@ struct AboutSettings: View {
 // MARK: - 右键 / 服务说明
 
 struct HelpSettings: View {
+    @EnvironmentObject var state: AppState
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                Form {
+                    Picker("访达右键菜单", selection: $state.finderMenuMode) {
+                        ForEach(FinderMenuMode.allCases) { Text($0.label).tag($0) }
+                    }
+                    Text("修改后立即生效，无需重启访达。")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+                .formStyle(.grouped)
+                .padding(.bottom, 4)
+
                 Label("在 Finder 里右键上传", systemImage: "cursorarrow.click.2").font(.headline)
                 Text("""
-                选中任意文件（可多选）→ 右键 → 「服务 / Services」→ 「使用 Dropline 上传」。
+                选中任意文件（可多选）→ 右键 → 「使用 Dropline 上传」。
 
-                如果菜单里暂时没有出现该项：
+                如果菜单里没有出现该项：
                 1. 确保 Dropline.app 已放入「应用程序」文件夹并至少启动过一次；
-                2. 打开「系统设置 → 键盘 → 键盘快捷键 → 服务 → 文件与文件夹」，勾选「使用 Dropline 上传」（也可在此设置快捷键）；
+                2. 打开「系统设置 → 通用 → 登录项与扩展 → 访达扩展」，打开 Dropline；
                 3. 仍未出现时，在终端执行：
-                   /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/Dropline.app
+                   pluginkit -e use -i dev.emmmm.Dropline.Finder
+
+                另外在「键盘 → 键盘快捷键 → 服务 → 文件与文件夹」里还有一个同名的服务项，
+                可以给它设置快捷键（不受上面的显示方式设置影响）。
                 """)
                 .font(.callout)
                 .foregroundStyle(.secondary)

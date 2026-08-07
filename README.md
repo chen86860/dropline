@@ -81,9 +81,30 @@ xattr -dr com.apple.quarantine /Applications/Dropline.app
 > 磁盘上只能存在一份 Dropline.app——两份副本会让 LaunchServices 在它们之间摇摆，
 > 右键服务菜单随之失效。`--install` 用 `mv` 而非 `cp`，装完 `dist/` 里不会有残留。
 
+## 打包 DMG
+
+```bash
+./Tools/dmg.sh          # 版本号取 CHANGELOG 最新条目，产出 dist/Dropline-<版本>.dmg
+```
+
+带背景图、卷图标与「拖到应用程序」引导。依赖 `brew install create-dmg`；无 GUI 环境
+（CI）会自动退回 `--skip-jenkins`，只是窗口布局不生效。
+
 ## 发布新版本
 
-先在 [CHANGELOG.md](CHANGELOG.md) 顶部加一节 `## [1.0.1] - 日期`，再执行：
+先在 [CHANGELOG.md](CHANGELOG.md) 顶部加一节 `## [1.0.1] - 日期`，然后二选一：
+
+**在 GitHub 上发（推荐）**：Actions → Release → Run workflow，填版本号。
+CI 会完成构建、打 DMG、签名 appcast、发 Release 并把更新说明回写到仓库。
+首次使用需要配置签名私钥：
+
+```bash
+./Tools/sparkle.sh export-key                                   # 从钥匙串导出
+gh secret set SPARKLE_PRIVATE_KEY < sparkle-private-key.txt     # 存为仓库 secret
+rm sparkle-private-key.txt
+```
+
+**在本机发**：
 
 ```bash
 ./Tools/sparkle.sh release 1.0.1   # 构建 → 打包 → EdDSA 签名 → 生成 appcast → 发 Release → 推送

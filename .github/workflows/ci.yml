@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 构建
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 缓存 SwiftPM 依赖
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: 编译并打包 .app
+        run: DROPLINE_SKIP_REGISTER=1 ./build.sh
+
+      - name: 校验产物
+        run: |
+          APP=dist/Dropline.app
+          test -x "$APP/Contents/MacOS/Dropline"
+          test -d "$APP/Contents/Frameworks/Sparkle.framework"
+          test -d "$APP/Contents/PlugIns/DroplineFinder.appex"
+          codesign -v "$APP"
+          plutil -lint "$APP/Contents/Info.plist"
+          plutil -lint "$APP/Contents/PlugIns/DroplineFinder.appex/Contents/Info.plist"
+          echo "版本 $(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"
+
+      - name: 校验 CHANGELOG 能被解析
+        run: ./Tools/changelog.py --latest

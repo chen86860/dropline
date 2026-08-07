@@ -1,0 +1,133 @@
+name: Release
+
+# 手动触发：Actions → Release → Run workflow，填版本号（必须已写进 CHANGELOG.md）
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号，如 1.2.0（需已存在于 CHANGELOG.md）"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: 构建并发布
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: 校验 CHANGELOG 里有该版本
+        run: ./Tools/changelog.py "$VERSION" > /dev/null
+
+      - name: 校验签名私钥已配置
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "::error::缺少 SPARKLE_PRIVATE_KEY secret，Sparkle 更新包无法签名"
+            echo "::error::用 ./Tools/sparkle.sh export-key 导出后添加到仓库 Secrets"
+            exit 1
+          fi
+
+      - name: 缓存 SwiftPM 依赖
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: 安装 create-dmg
+        run: brew install create-dmg
+
+      - name: 构建 App
+        run: DROPLINE_VERSION="$VERSION" DROPLINE_SKIP_REGISTER=1 ./build.sh
+
+      - name: 打包 DMG
+        env:
+          DMG_SKIP_JENKINS: "1"   # CI 无 GUI，直接跳过访达美化
+        run: ./Tools/dmg.sh "$VERSION"
+
+      - name: 拉取历史版本安装包
+        # generate_appcast 只会为目录里存在的包生成条目；不先取回历史版本，
+        # 新的 appcast 会把老版本条目整个丢掉，也无法生成增量包
+        run: |
+          mkdir -p dist/releases
+          for tag in $(gh release list --limit 20 --json tagName -q '.[].tagName'); do
+            gh release download "$tag" --pattern 'Dropline-*.zip' --dir dist/releases --clobber || true
+          done
+          ls -la dist/releases || true
+
+      - name: 打包 zip（Sparkle 更新用）
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent dist/Dropline.app "dist/releases/Dropline-$VERSION.zip"
+
+      - name: 生成更新说明
+        run: ./Tools/changelog.py "$VERSION" --html > "dist/releases/Dropline-$VERSION.html"
+
+      - name: 生成并签名 appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          TOOLS=$(find .build/artifacts -type d -name bin -path '*sparkle*' | head -1)
+          printf '%s' "$SPARKLE_PRIVATE_KEY" | "$TOOLS/generate_appcast" dist/releases \
+            --ed-key-file - \
+            --download-url-prefix "https://github.com/${{ github.repository }}/releases/download/v$VERSION/" \
+            -o appcast.xml
+          python3 - appcast.xml "${{ github.repository }}" <<'PY'
+          import re, sys
+          path, repo = sys.argv[1], sys.argv[2]
+          xml = open(path).read()
+          xml = re.sub(r'url="[^"]*/Dropline-([0-9][^"/]*)\.zip"',
+                       lambda m: f'url="https://github.com/{repo}/releases/download/v{m.group(1)}/Dropline-{m.group(1)}.zip"',
+                       xml)
+          open(path, "w").write(xml)
+          PY
+          cat appcast.xml
+
+      - name: 发布 GitHub Release
+        run: |
+          ./Tools/changelog.py "$VERSION" > notes.md
+          {
+            echo
+            echo "---"
+            echo
+            echo '下载 `Dropline-'"$VERSION"'.dmg`，拖进「应用程序」即可。'
+            echo 'ad-hoc 签名，首次打开请右键 App →「打开」，或执行：'
+            echo '`xattr -dr com.apple.quarantine /Applications/Dropline.app`'
+          } >> notes.md
+
+          ASSETS=("dist/Dropline-$VERSION.dmg" "dist/releases/Dropline-$VERSION.zip")
+          while IFS= read -r d; do ASSETS+=("$d"); done \
+            < <(ls dist/releases/*"$VERSION"-*.delta 2>/dev/null || true)
+
+          gh release create "v$VERSION" "${ASSETS[@]}" \
+            --title "Dropline $VERSION" --notes-file notes.md \
+          || { gh release upload "v$VERSION" "${ASSETS[@]}" --clobber
+               gh release edit "v$VERSION" --notes-file notes.md; }
+
+      - name: 回写 appcast 与更新说明
+        run: |
+          cp "dist/releases/Dropline-$VERSION.html" "Dropline-$VERSION.html"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add appcast.xml "Dropline-$VERSION.html"
+          git diff --cached --quiet || git commit -m "Release $VERSION: update appcast"
+          git push origin main
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dropline-${{ inputs.version }}
+          path: |
+            dist/Dropline-${{ inputs.version }}.dmg
+            dist/releases/Dropline-${{ inputs.version }}.zip

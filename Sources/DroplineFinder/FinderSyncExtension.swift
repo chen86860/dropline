@@ -27,6 +27,16 @@ final class DroplineFinderSync: FIFinderSync {
 
     // MARK: 右键菜单
 
+    /// 主 App 写在本扩展容器里的展示方式配置。每次弹菜单都读一次，改完立即生效。
+    /// 取值：icon（带图标）/ text（纯文字）/ hidden（不显示），缺省为 icon。
+    private var menuMode: String {
+        let url = URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("Library/Application Support/Dropline/finder-menu.txt")
+        guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return "icon" }
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ["icon", "text", "hidden"].contains(value) ? value : "icon"
+    }
+
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
         // 只在选中文件/文件夹、或在文件夹空白处右键时提供
         switch menuKind {
@@ -35,12 +45,17 @@ final class DroplineFinderSync: FIFinderSync {
         default:
             return nil
         }
+        let mode = menuMode
+        guard mode != "hidden" else { return nil }
+
         let menu = NSMenu(title: "")
         let item = NSMenuItem(title: "使用 Dropline 上传",
                               action: #selector(uploadSelection(_:)),
                               keyEquivalent: "")
         item.target = self
-        item.image = NSImage(systemSymbolName: "arrow.up.circle", accessibilityDescription: nil)
+        if mode == "icon" {
+            item.image = NSImage(systemSymbolName: "arrow.up.circle", accessibilityDescription: nil)
+        }
         menu.addItem(item)
         return menu
     }
