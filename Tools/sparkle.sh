@@ -53,14 +53,25 @@ open(path, "w").write(xml)
 print("appcast 下载地址已按版本对齐 tag")
 PY
 
-  echo "==> 发布 GitHub Release"
-  gh release create "v$VERSION" "$ZIP" \
+  # generate_appcast 还会为历史版本生成增量包，appcast 里引用的是本次 tag 下的地址，
+  # 必须一并上传，否则老版本用户下载增量包会 404
+  ASSETS=("$ZIP")
+  while IFS= read -r delta; do ASSETS+=("$delta"); done < <(ls "$RELEASES"/*"$VERSION"-*.delta 2>/dev/null || true)
+  echo "==> 发布 GitHub Release（${#ASSETS[@]} 个资产）"
+  gh release create "v$VERSION" "${ASSETS[@]}" \
     --repo "$REPO" \
     --title "Dropline $VERSION" \
     --notes "Dropline $VERSION
 
 安装后首次打开若被 Gatekeeper 拦截，右键 App →「打开」。" \
-    || gh release upload "v$VERSION" "$ZIP" --repo "$REPO" --clobber
+    || gh release upload "v$VERSION" "${ASSETS[@]}" --repo "$REPO" --clobber
+
+  # appcast 里的 releaseNotesLink 是相对 appcast.xml 推导出来的仓库根路径，
+  # 所以更新说明 HTML 必须放进仓库根目录（不是 Release 资产）
+  if [ -f "$RELEASES/Dropline-$VERSION.html" ]; then
+    cp "$RELEASES/Dropline-$VERSION.html" "$ROOT/Dropline-$VERSION.html"
+    git add "Dropline-$VERSION.html"
+  fi
 
   echo "==> 提交 appcast"
   git add appcast.xml
