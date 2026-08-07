@@ -21,7 +21,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -40,7 +40,7 @@ jobs:
           fi
 
       - name: 缓存 SwiftPM 依赖
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .build
           key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
@@ -125,7 +125,7 @@ jobs:
           git push origin main
 
       - name: 上传构建产物
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Dropline-${{ inputs.version }}
           path: |
