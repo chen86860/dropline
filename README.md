@@ -65,6 +65,31 @@ LaunchServices 迟早会把它重新索引，形成同一 Bundle ID 的两份注
 
 右键服务菜单没出现时：系统设置 → 键盘 → 键盘快捷键 → 服务 → 文件与文件夹，勾选「使用 Dropline 上传」（也可在此设快捷键）。
 
+## 自动更新（Sparkle）
+
+内置 [Sparkle 2](https://sparkle-project.org)，`Sparkle.framework` 直接嵌进
+`Contents/Frameworks`，无需 Xcode 工程。
+
+- 应用菜单与菜单栏托盘均有「检查更新…」
+- 设置 → 通用 → 软件更新：自动检查 / 自动下载安装、当前版本、上次检查时间
+- 更新包用 EdDSA 签名，公钥写在 Info.plist（`SUPublicEDKey`），私钥存登录钥匙串，不在仓库里
+- Feed：`https://raw.githubusercontent.com/chen86860/dropline/main/appcast.xml`，安装包挂在 GitHub Releases
+
+发布新版本：
+
+```bash
+./Tools/sparkle.sh release 1.0.1   # 构建 → 打包 → 签名 → 生成 appcast → 发 Release → 推送
+./Tools/sparkle.sh pubkey          # 打印公钥，应与 build.sh 里的 SU_PUBLIC_KEY 一致
+```
+
+**关于代码签名**：ad-hoc 构建下脚本不会启用 hardened runtime——两者的 ad-hoc 签名
+Team ID 不一致，库验证会让 dyld 拒绝加载 Sparkle。正式分发时设置环境变量后重新构建，
+脚本会自动加上 hardened runtime 与时间戳（公证所需）：
+
+```bash
+DROPLINE_SIGN_ID="Developer ID Application: 你的名字 (TEAMID)" ./Tools/sparkle.sh release 1.0.1
+```
+
 ## 标识符
 
 | 项 | 值 |
@@ -112,3 +137,5 @@ Sources/Dropline/
 | 服务菜单时有时无 / 点击无反应 | `/Applications` 与 `dist/` 同时存在同 Bundle ID 的两份副本，LaunchServices 在两者间摇摆（`lsregister -u` 也挡不住系统重新索引 `dist/`） | `--install` 改为 `mv`，磁盘上只保留一份；脚本末尾检查重复注册 |
 | 齿轮 / 托盘「设置…」点了没反应 | `NSApp.sendAction(showSettingsWindow:)` 在新版 macOS 已失效 | 改用 `SettingsLink`，并保留遍历应用菜单的兜底 |
 | 关掉主窗口后 App 像卡死 | 关窗后 SwiftUI 不会自动重建窗口 | 实现 `applicationShouldHandleReopen`，复用已有 NSWindow |
+| 启动即崩：`Library not loaded: @rpath/Sparkle.framework` | ad-hoc 签名 + hardened runtime 触发库验证，主程序与框架 Team ID 不一致 | ad-hoc 构建不加 `--options runtime`，仅在有 Developer ID 时启用 |
+| 「检查更新」在已是最新版时毫无反应 | 直接调 `SPUUpdater.checkForUpdates()` 不接标准 UI | 改走 `SPUStandardUpdaterController.checkForUpdates(_:)` |
