@@ -6,7 +6,8 @@ cd "$(dirname "$0")"
 ROOT="$(pwd)"
 APP="$ROOT/dist/Dropline.app"
 BUNDLE_ID="dev.emmmm.Dropline"
-VERSION="${DROPLINE_VERSION:-1.0.0}"
+# 版本号默认取 CHANGELOG.md 里最新的一条，避免和发布内容脱节
+VERSION="${DROPLINE_VERSION:-$("$ROOT/Tools/changelog.py" --latest)}"
 
 # Sparkle 自动更新
 FEED_URL="https://raw.githubusercontent.com/chen86860/dropline/main/appcast.xml"
@@ -103,7 +104,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleIconFile</key>          <string>Dropline</string>
     <key>LSMinimumSystemVersion</key>    <string>13.0</string>
     <key>NSHighResolutionCapable</key>   <true/>
-    <key>NSHumanReadableCopyright</key>  <string>github.com/chen86860/dropline</string>
+    <key>NSHumanReadableCopyright</key>  <string>MIT License · github.com/chen86860/dropline</string>
 
     <!-- Sparkle 自动更新 -->
     <key>SUFeedURL</key>                 <string>${FEED_URL}</string>

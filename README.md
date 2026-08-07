@@ -13,6 +13,7 @@ macOS 原生上传工具：拖拽、右键、菜单栏一键上传图片 / 视�
 [![Stars](https://img.shields.io/github/stars/chen86860/dropline?color=f5a623)](https://github.com/chen86860/dropline/stargazers)
 [![Downloads](https://img.shields.io/github/downloads/chen86860/dropline/total?color=3fb950)](https://github.com/chen86860/dropline/releases)
 ![Platform](https://img.shields.io/badge/macOS-13%2B%20·%20Apple%20Silicon-black)
+[![License](https://img.shields.io/github/license/chen86860/dropline?color=8957e5)](LICENSE)
 
 </div>
 
@@ -82,9 +83,15 @@ xattr -dr com.apple.quarantine /Applications/Dropline.app
 
 ## 发布新版本
 
+先在 [CHANGELOG.md](CHANGELOG.md) 顶部加一节 `## [1.0.1] - 日期`，再执行：
+
 ```bash
 ./Tools/sparkle.sh release 1.0.1   # 构建 → 打包 → EdDSA 签名 → 生成 appcast → 发 Release → 推送
 ```
+
+CHANGELOG 是发布说明的唯一来源：脚本从中抽取对应版本的条目，转成 HTML 供 Sparkle
+更新弹窗显示，同时用 Markdown 原文作为 GitHub Release 正文。**没写条目会直接报错中止**，
+不会发出没有说明的版本。
 
 更新包用 EdDSA 签名，公钥在 Info.plist，私钥存登录钥匙串。
 正式分发时带上 Developer ID，脚本会自动启用 hardened runtime 与时间戳（公证所需）：
@@ -112,4 +119,13 @@ Sources/Dropline/
 
 Sources/DroplineFinder/
   FinderSyncExtension.swift   Finder 右键扩展（沙盒，经 dropline:// 把选中文件交给主 App）
+
+Tools/
+  sparkle.sh       发布助手
+  changelog.py     从 CHANGELOG.md 抽取版本条目，输出 Markdown / HTML
+  makeicon.swift   生成 App 图标
 ```
+
+## 许可证
+
+[MIT](LICENSE)

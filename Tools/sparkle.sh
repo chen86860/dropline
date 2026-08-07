@@ -26,6 +26,13 @@ release)
   VERSION="${2:-}"
   [ -n "$VERSION" ] || { echo "用法: $0 release <版本号，如 1.0.1>"; exit 1; }
 
+  # 发布说明的唯一来源是 CHANGELOG.md；没写条目就直接中止，避免发出没有说明的版本
+  echo "==> 读取 CHANGELOG.md"
+  NOTES_MD=$("$ROOT/Tools/changelog.py" "$VERSION") || exit 1
+  mkdir -p "$RELEASES"
+  "$ROOT/Tools/changelog.py" "$VERSION" --html > "$RELEASES/Dropline-$VERSION.html"
+  printf '%s\n' "$NOTES_MD" > "$RELEASES/notes-$VERSION.md"
+
   echo "==> 构建 $VERSION"
   DROPLINE_VERSION="$VERSION" DROPLINE_SKIP_REGISTER=1 "$ROOT/build.sh" >/dev/null
 
@@ -63,13 +70,22 @@ PY
   ASSETS=("$ZIP")
   while IFS= read -r delta; do ASSETS+=("$delta"); done < <(ls "$RELEASES"/*"$VERSION"-*.delta 2>/dev/null || true)
   echo "==> 发布 GitHub Release（${#ASSETS[@]} 个资产）"
+  # Release 正文用 CHANGELOG 的 Markdown 原文，再附上 Gatekeeper 提示
+  NOTES_FILE="$RELEASES/notes-$VERSION.md"
+  {
+    echo
+    echo "---"
+    echo
+    echo 'ad-hoc 签名，首次打开请右键 App →「打开」，或执行：'
+    echo '`xattr -dr com.apple.quarantine /Applications/Dropline.app`'
+  } >> "$NOTES_FILE"
+
   gh release create "v$VERSION" "${ASSETS[@]}" \
     --repo "$REPO" \
     --title "Dropline $VERSION" \
-    --notes "Dropline $VERSION
-
-安装后首次打开若被 Gatekeeper 拦截，右键 App →「打开」。" \
-    || gh release upload "v$VERSION" "${ASSETS[@]}" --repo "$REPO" --clobber
+    --notes-file "$NOTES_FILE" \
+    || { gh release upload "v$VERSION" "${ASSETS[@]}" --repo "$REPO" --clobber
+         gh release edit "v$VERSION" --repo "$REPO" --notes-file "$NOTES_FILE"; }
 
   # appcast 里的 releaseNotesLink 是相对 appcast.xml 推导出来的仓库根路径，
   # 所以更新说明 HTML 必须放进仓库根目录（不是 Release 资产）
