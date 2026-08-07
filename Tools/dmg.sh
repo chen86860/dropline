@@ -60,6 +60,15 @@ fi
 
 rm -rf "$BG_DIR"
 
+# create-dmg 过程中会临时挂载 /Volumes/dmg.XXXX，卷卸载后 LaunchServices 里仍会留下
+# 指向它的注册记录，和 /Applications 里的形成重复注册，右键菜单会失效。这里清掉。
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+if [ -x "$LSREGISTER" ]; then
+  "$LSREGISTER" -dump 2>/dev/null \
+    | grep -o '/Volumes/dmg\.[^/]*/Dropline\.app' | sort -u \
+    | while read -r stale; do "$LSREGISTER" -u "$stale" 2>/dev/null || true; done
+fi
+
 # 注意：变量后面紧跟全角括号时必须用 ${} 包起来，否则 bash 会把多字节字符
 # 当成变量名的一部分，在 set -u 下直接报 unbound variable
 SIZE=$(du -h "$DMG" | cut -f1 | tr -d ' ')
