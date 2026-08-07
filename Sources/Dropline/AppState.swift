@@ -48,6 +48,18 @@ final class AppState: ObservableObject {
     @Published var maxConcurrent: Int = 3 {
         didSet { UserDefaults.standard.set(maxConcurrent, forKey: "maxConcurrent") }
     }
+    @Published var notifyOnFinish: Bool = true {
+        didSet { UserDefaults.standard.set(notifyOnFinish, forKey: "notifyOnFinish") }
+    }
+
+    /// 菜单栏进度：nil 表示空闲；否则是所有未完成任务的平均进度
+    var trayProgress: Double? {
+        let pending = items.filter { !$0.isFinished }
+        guard !pending.isEmpty else { return nil }
+        return pending.reduce(0) { $0 + $1.progress } / Double(pending.count)
+    }
+
+    var pendingCount: Int { items.filter { !$0.isFinished }.count }
 
     private let profilesKey = "profiles.v1"
     private let activeKey = "activeProfile.v1"
@@ -85,6 +97,7 @@ final class AppState: ObservableObject {
         markdownCopy = d.bool(forKey: "markdownCopy")
         hideDockIcon = d.bool(forKey: "hideDockIcon")
         maxConcurrent = d.object(forKey: "maxConcurrent") as? Int ?? 3
+        notifyOnFinish = d.object(forKey: "notifyOnFinish") as? Bool ?? true
     }
 
     func saveProfiles() {
@@ -199,9 +212,16 @@ final class AppState: ObservableObject {
             saveHistory()
             if autoCopyURL { copy(text: formatted(url: url, filename: item.fileURL.lastPathComponent)) }
             lastMessage = "已上传 \(item.fileURL.lastPathComponent)" + (autoCopyURL ? "，链接已复制" : "")
+            if notifyOnFinish {
+                Notifier.shared.uploadSucceeded(filename: item.fileURL.lastPathComponent, url: url)
+            }
         } else if case .failure(let err) = result {
             lastMessage = "上传失败：\(err.localizedDescription)"
             NSSound.beep()
+            if notifyOnFinish {
+                Notifier.shared.uploadFailed(filename: item.fileURL.lastPathComponent,
+                                             reason: err.localizedDescription)
+            }
         }
         pump()
     }
@@ -218,6 +238,10 @@ final class AppState: ObservableObject {
 
     func clearFinished() {
         items.removeAll { $0.isFinished }
+    }
+
+    func remove(_ id: UUID) {
+        items.removeAll { $0.id == id }
     }
 
     // MARK: 面板

@@ -20,9 +20,9 @@ macOS 原生上传工具：拖拽、右键、菜单栏一键上传图片 / 视�
 
 ## 功能
 
-- **五种上传入口**：拖到窗口 / 拖到 Dock 图标 / 系统文件面板 / 剪贴板（可直接传截图） / **Finder 右键 →「服务」**
-- **菜单栏常驻**：快速上传，查看并复制最近 8 条链接
-- **上传完成自动复制链接**，可切换 Markdown `![name](url)` 格式
+- **五种上传入口**：拖到窗口 / 拖到 Dock 图标 / 系统文件面板 / 剪贴板（可直接传截图） / **Finder 右键顶层菜单**
+- **菜单栏常驻**：上传时图标变进度环，可快速上传并复制最近 8 条链接
+- **上传完成自动复制链接 + 系统通知**，可切换 Markdown `![name](url)` 格式
 - **任意文件类型**：大视频走临时文件流式上传，不占内存
 - 多图床配置随时切换、并发上传、实时进度、历史记录
 - 密钥存**系统钥匙串**，不写入配置文件
@@ -65,7 +65,8 @@ ad-hoc 签名，首次打开右键 App →「打开」，或：
 xattr -dr com.apple.quarantine /Applications/Dropline.app
 ```
 
-右键服务菜单没出现时，到「系统设置 → 键盘 → 键盘快捷键 → 服务 → 文件与文件夹」勾选「使用 Dropline 上传」。
+右键菜单项没出现时，到「系统设置 → 通用 → 登录项与扩展 → 访达扩展」打开 Dropline。
+（另外在「键盘 → 键盘快捷键 → 服务 → 文件与文件夹」里还有一个同名的服务项，可为它设快捷键。）
 
 ## 从源码构建
 
@@ -103,7 +104,12 @@ Sources/Dropline/
   S3Signer.swift       AWS Signature V4（流式 SHA256）
   Templating.swift     {{变量}} 渲染 + JSON 路径取值
   Updater.swift        Sparkle 封装
+  Notifier.swift       系统通知
+  TrayIcon.swift       菜单栏进度环图标
   Keychain.swift       密钥存取
   ContentView.swift    主窗口
-  SettingsView.swift   设置
+  SettingsView.swift   设置（图床 / 通用 / 右键上传 / 关于）
+
+Sources/DroplineFinder/
+  FinderSyncExtension.swift   Finder 右键扩展（沙盒，经 dropline:// 把选中文件交给主 App）
 ```

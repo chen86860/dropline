@@ -19,14 +19,6 @@ struct ContentView: View {
             dropZone
                 .padding(16)
             Divider()
-            Picker("", selection: $tab) {
-                ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal, 16)
-            .padding(.top, 10)
-
             Group {
                 switch tab {
                 case .queue: queueList
@@ -34,9 +26,20 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            Divider()
-            statusBar
+            // 用 safeAreaInset 而不是并排放：否则列表内容会滚到分段控件下面，首行被遮住
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    Picker("", selection: $tab) {
+                        ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    Divider()
+                }
+                .background(.bar)
+            }
         }
         .frame(minWidth: 560, minHeight: 560)
     }
@@ -157,6 +160,21 @@ struct ContentView: View {
                 List {
                     ForEach(state.items) { item in
                         UploadRow(item: item)
+                            .contextMenu {
+                                if case .done(let url) = item.status {
+                                    Button("复制链接") { state.copy(text: url) }
+                                    Button("复制 Markdown") {
+                                        state.copy(text: "![\(item.fileURL.lastPathComponent)](\(url))")
+                                    }
+                                    Button("在浏览器打开") {
+                                        if let u = URL(string: url) { NSWorkspace.shared.open(u) }
+                                    }
+                                    Divider()
+                                }
+                                Button("从队列移除") { state.remove(item.id) }
+                                Button("清除已完成") { state.clearFinished() }
+                                    .disabled(!state.items.contains { $0.isFinished })
+                            }
                     }
                 }
                 .listStyle(.inset)
@@ -196,6 +214,8 @@ struct ContentView: View {
                             Button("在浏览器打开") {
                                 if let u = URL(string: rec.url) { NSWorkspace.shared.open(u) }
                             }
+                            Divider()
+                            Button("清空历史") { state.clearHistory() }
                         }
                     }
                 }
@@ -212,28 +232,6 @@ struct ContentView: View {
         }
     }
 
-    // MARK: 状态栏
-
-    private var statusBar: some View {
-        HStack {
-            Text(state.lastMessage.isEmpty ? "就绪" : state.lastMessage)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Spacer()
-            if tab == .queue {
-                Button("清除已完成") { state.clearFinished() }
-                    .buttonStyle(.link)
-                    .disabled(!state.items.contains { $0.isFinished })
-            } else {
-                Button("清空历史") { state.clearHistory() }
-                    .buttonStyle(.link)
-                    .disabled(state.history.isEmpty)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-    }
 }
 
 // MARK: - 队列行

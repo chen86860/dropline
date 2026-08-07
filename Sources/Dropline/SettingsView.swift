@@ -12,6 +12,8 @@ struct SettingsView: View {
                 .tabItem { Label("通用", systemImage: "gearshape") }
             HelpSettings()
                 .tabItem { Label("右键上传", systemImage: "cursorarrow.click.2") }
+            AboutSettings()
+                .tabItem { Label("关于", systemImage: "info.circle") }
         }
         .frame(width: 700, height: 560)
     }
@@ -29,6 +31,7 @@ struct GeneralSettings: View {
                 Toggle("上传完成后自动把链接复制到剪贴板", isOn: $state.autoCopyURL)
                 Toggle("复制为 Markdown 格式 ![name](url)", isOn: $state.markdownCopy)
                     .disabled(!state.autoCopyURL)
+                Toggle("上传完成后发送系统通知", isOn: $state.notifyOnFinish)
                 Toggle("隐藏 Dock 图标（仅保留菜单栏图标）", isOn: $state.hideDockIcon)
                 Picker("同时上传数量", selection: $state.maxConcurrent) {
                     ForEach([1, 2, 3, 5, 8], id: \.self) { Text("\($0)").tag($0) }
@@ -64,6 +67,81 @@ struct GeneralSettings: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+}
+
+// MARK: - 关于
+
+struct AboutSettings: View {
+    @EnvironmentObject var updater: UpdaterModel
+
+    private let repoURL = "https://github.com/chen86860/dropline"
+
+    private var bundleID: String { Bundle.main.bundleIdentifier ?? "—" }
+    private var copyright: String {
+        Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                VStack(spacing: 10) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 96, height: 96)
+                    Text("Dropline").font(.system(size: 24, weight: .semibold))
+                    Text("拖进去，链接就在剪贴板里")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Text("版本 \(updater.versionString)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                .padding(.top, 24)
+
+                HStack(spacing: 10) {
+                    Button("检查更新…") { updater.checkForUpdates() }
+                        .disabled(!updater.canCheck)
+                    Button("项目主页") { open(repoURL) }
+                    Button("反馈问题") { open("\(repoURL)/issues") }
+                }
+
+                Form {
+                    LabeledContent("Bundle ID") {
+                        Text(bundleID).textSelection(.enabled).foregroundStyle(.secondary)
+                    }
+                    LabeledContent("更新源") {
+                        Text(updater.feedURL)
+                            .textSelection(.enabled)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    LabeledContent("系统要求") {
+                        Text("macOS 13+ · Apple Silicon").foregroundStyle(.secondary)
+                    }
+                    LabeledContent("技术栈") {
+                        Text("Swift · SwiftUI · AppKit").foregroundStyle(.secondary)
+                    }
+                    LabeledContent("自动更新") {
+                        Link("Sparkle", destination: URL(string: "https://sparkle-project.org")!)
+                    }
+                }
+                .formStyle(.grouped)
+                .frame(maxHeight: 240)
+
+                if !copyright.isEmpty {
+                    Text(copyright).font(.caption2).foregroundStyle(.tertiary)
+                }
+                Spacer(minLength: 12)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func open(_ string: String) {
+        if let url = URL(string: string) { NSWorkspace.shared.open(url) }
     }
 }
 

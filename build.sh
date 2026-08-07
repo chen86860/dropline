@@ -22,6 +22,47 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Dropline"
 
+echo "==> 打包 Finder 扩展 (.appex)"
+EXT="$APP/Contents/PlugIns/DroplineFinder.appex"
+EXT_ID="${BUNDLE_ID}.Finder"
+SDK_VERSION=$(xcrun --sdk macosx --show-sdk-version)
+SDK_NAME="macosx${SDK_VERSION}"
+OS_BUILD=$(sw_vers -buildVersion)
+mkdir -p "$EXT/Contents/MacOS"
+cp "$(dirname "$BIN")/DroplineFinder" "$EXT/Contents/MacOS/DroplineFinder"
+cat > "$EXT/Contents/Info.plist" <<EXTPLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>              <string>DroplineFinder</string>
+    <key>CFBundleDisplayName</key>       <string>Dropline</string>
+    <key>CFBundleExecutable</key>        <string>DroplineFinder</string>
+    <key>CFBundleIdentifier</key>        <string>${EXT_ID}</string>
+    <key>CFBundlePackageType</key>       <string>XPC!</string>
+    <key>CFBundleShortVersionString</key><string>${VERSION}</string>
+    <key>CFBundleVersion</key>           <string>${VERSION}</string>
+    <key>CFBundleSupportedPlatforms</key><array><string>MacOSX</string></array>
+    <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+    <key>CFBundleDevelopmentRegion</key> <string>en</string>
+    <!-- pkd 用这些平台键判定扩展是否可用，缺了会被静默忽略 -->
+    <key>DTPlatformName</key>            <string>macosx</string>
+    <key>DTSDKName</key>                 <string>${SDK_NAME}</string>
+    <key>DTPlatformVersion</key>         <string>${SDK_VERSION}</string>
+    <key>DTCompiler</key>                <string>com.apple.compilers.llvm.clang.1_0</string>
+    <key>BuildMachineOSBuild</key>       <string>${OS_BUILD}</string>
+    <key>LSMinimumSystemVersion</key>    <string>13.0</string>
+    <key>NSPrincipalClass</key>          <string>NSApplication</string>
+    <key>NSExtension</key>
+    <dict>
+        <key>NSExtensionAttributes</key><dict/>
+        <key>NSExtensionPointIdentifier</key><string>com.apple.FinderSync</string>
+        <key>NSExtensionPrincipalClass</key><string>DroplineFinderSync</string>
+    </dict>
+</dict>
+</plist>
+EXTPLIST
+
 echo "==> 嵌入 Sparkle.framework"
 SPARKLE_FW=$(find "$ROOT/.build/artifacts" -type d -name "Sparkle.framework" -path "*macos*" | head -1)
 if [ -z "$SPARKLE_FW" ]; then
@@ -62,13 +103,22 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleIconFile</key>          <string>Dropline</string>
     <key>LSMinimumSystemVersion</key>    <string>13.0</string>
     <key>NSHighResolutionCapable</key>   <true/>
-    <key>NSHumanReadableCopyright</key>  <string>Dropline</string>
+    <key>NSHumanReadableCopyright</key>  <string>github.com/chen86860/dropline</string>
 
     <!-- Sparkle 自动更新 -->
     <key>SUFeedURL</key>                 <string>${FEED_URL}</string>
     <key>SUPublicEDKey</key>             <string>${SU_PUBLIC_KEY}</string>
     <key>SUEnableAutomaticChecks</key>   <true/>
     <key>SUScheduledCheckInterval</key>  <integer>86400</integer>
+
+    <!-- Finder 扩展通过 dropline://upload?list=… 把选中文件交给主 App -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>    <string>${BUNDLE_ID}</string>
+            <key>CFBundleURLSchemes</key> <array><string>dropline</string></array>
+        </dict>
+    </array>
 
     <!-- 允许把任意文件拖到 Dock 图标上传 -->
     <key>CFBundleDocumentTypes</key>
@@ -122,6 +172,8 @@ for nested in \
   [ -e "$nested" ] && codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$nested"
 done
 codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$FW"
+codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" \
+  --entitlements "$ROOT/Resources/DroplineFinder.entitlements" --sign "$SIGN_ID" "$EXT"
 codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$APP"
 
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister

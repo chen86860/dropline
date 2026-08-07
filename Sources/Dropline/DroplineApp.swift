@@ -40,11 +40,13 @@ struct DroplineApp: App {
                 .environmentObject(updater)
         }
 
-        // 系统托盘（菜单栏）
-        MenuBarExtra("Dropline", systemImage: "arrow.up.circle") {
+        // 系统托盘（菜单栏）：上传中显示进度环
+        MenuBarExtra {
             MenuBarContent()
                 .environmentObject(state)
                 .environmentObject(updater)
+        } label: {
+            Image(nsImage: TrayIcon.image(progress: state.trayProgress))
         }
     }
 }
@@ -118,16 +120,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.servicesProvider = serviceProvider
         NSUpdateDynamicServices()
 
+        Notifier.shared.start()
+
         if AppState.shared.hideDockIcon {
             NSApp.setActivationPolicy(.accessory)
         }
     }
 
-    /// 拖到 Dock 图标上传
+    /// 拖到 Dock 图标上传；也接收 Finder 扩展发来的 dropline://upload?list=…
     func application(_ application: NSApplication, open urls: [URL]) {
-        Task { @MainActor in
-            AppState.shared.enqueue(urls.filter { $0.isFileURL })
+        var files = urls.filter { $0.isFileURL }
+        for url in urls where url.scheme == "dropline" {
+            files += Self.filesFromListURL(url)
         }
+        guard !files.isEmpty else { return }
+        Task { @MainActor in
+            AppState.shared.enqueue(files)
+            if !AppState.shared.hideDockIcon { AppDelegate.showMainWindow() }
+        }
+    }
+
+    /// 读取扩展写下的路径清单，读完即删
+    private static func filesFromListURL(_ url: URL) -> [URL] {
+        guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let path = comps.queryItems?.first(where: { $0.name == "list" })?.value,
+              let content = try? String(contentsOfFile: path, encoding: .utf8)
+        else { return [] }
+        try? FileManager.default.removeItem(atPath: path)
+        return content
+            .split(separator: "\n")
+            .map { URL(fileURLWithPath: String($0)) }
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
