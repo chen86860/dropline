@@ -34,6 +34,11 @@ release)
   ZIP="$RELEASES/Dropline-$VERSION.zip"
   rm -f "$ZIP"
   ditto -c -k --sequesterRsrc --keepParent "$ROOT/dist/Dropline.app" "$ZIP"
+  # 打完包就删掉 dist 里的副本：留着会被 LaunchServices 索引，
+  # 和 /Applications 里的形成两份注册，右键菜单会失效
+  LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+  "$LSREGISTER" -u "$ROOT/dist/Dropline.app" 2>/dev/null || true
+  rm -rf "$ROOT/dist/Dropline.app"
 
   echo "==> 生成并签名 appcast"
   "$TOOLS/generate_appcast" "$RELEASES" \
