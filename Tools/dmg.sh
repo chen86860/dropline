@@ -64,9 +64,13 @@ rm -rf "$BG_DIR"
 # 指向它的注册记录，和 /Applications 里的形成重复注册，右键菜单会失效。这里清掉。
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 if [ -x "$LSREGISTER" ]; then
-  "$LSREGISTER" -dump 2>/dev/null \
-    | grep -o '/Volumes/dmg\.[^/]*/Dropline\.app' | sort -u \
-    | while read -r stale; do "$LSREGISTER" -u "$stale" 2>/dev/null || true; done
+  # 没有残留时 grep 返回 1，在 set -o pipefail 下会直接终止脚本，所以要兜住
+  STALE=$("$LSREGISTER" -dump 2>/dev/null | grep -o '/Volumes/dmg\.[^/]*/Dropline\.app' | sort -u || true)
+  if [ -n "$STALE" ]; then
+    while IFS= read -r entry; do
+      [ -n "$entry" ] && "$LSREGISTER" -u "$entry" 2>/dev/null || true
+    done <<< "$STALE"
+  fi
 fi
 
 # 注意：变量后面紧跟全角括号时必须用 ${} 包起来，否则 bash 会把多字节字符
