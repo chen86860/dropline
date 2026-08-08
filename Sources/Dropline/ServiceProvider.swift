@@ -18,15 +18,14 @@ final class ServiceProvider: NSObject {
         }
 
         guard !urls.isEmpty else {
-            error.pointee = "没有可上传的文件" as NSString
+            error.pointee = "No files to upload".t as NSString
             return
         }
 
+        // 只入队，不抢前台：上传进度看菜单栏图标的进度环就够了
         Task { @MainActor in
             AppState.shared.enqueue(urls)
-            if !AppState.shared.hideDockIcon {
-                AppDelegate.showMainWindow()
-            }
+            AppDelegate.uploadRequestedInBackground()
         }
     }
 }

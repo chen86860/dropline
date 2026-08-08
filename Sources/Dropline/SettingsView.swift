@@ -6,16 +6,18 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
-            ProfilesSettings()
-                .tabItem { Label("图床配置", systemImage: "externaldrive.badge.icloud") }
             GeneralSettings()
-                .tabItem { Label("通用", systemImage: "gearshape") }
-            HelpSettings()
-                .tabItem { Label("右键上传", systemImage: "cursorarrow.click.2") }
+                .tabItem { Label("General".t, systemImage: "gearshape") }
+            ProfilesSettings()
+                .tabItem { Label("Hosts".t, systemImage: "externaldrive.badge.icloud") }
             AboutSettings()
-                .tabItem { Label("关于", systemImage: "info.circle") }
+                .tabItem { Label("About".t, systemImage: "info.circle") }
         }
         .frame(width: 700, height: 560)
+        // .tabItem 的文案/图标换了以后 SwiftUI 不会就地更新，会串成上一份甚至重复；
+        // 语言一变就整个重建 TabView。顺带也把各页 Picker 的选项一起刷新掉，
+        // 所以下面各页不用再单独挂 id（挂在 Form 行上还会弄丢行背景）。
+        .id(state.language)
     }
 }
 
@@ -28,38 +30,68 @@ struct GeneralSettings: View {
     var body: some View {
         Form {
             Section {
-                Toggle("上传完成后自动把链接复制到剪贴板", isOn: $state.autoCopyURL)
-                Toggle("复制为 Markdown 格式 ![name](url)", isOn: $state.markdownCopy)
+                Toggle("Copy the link to the clipboard when an upload finishes".t,
+                       isOn: $state.autoCopyURL)
+                Toggle("Copy as Markdown ![name](url)".t, isOn: $state.markdownCopy)
                     .disabled(!state.autoCopyURL)
-                Toggle("上传完成后发送系统通知", isOn: $state.notifyOnFinish)
-                Toggle("隐藏 Dock 图标（仅保留菜单栏图标）", isOn: $state.hideDockIcon)
-                Picker("同时上传数量", selection: $state.maxConcurrent) {
+                Toggle("Send a system notification when an upload finishes".t,
+                       isOn: $state.notifyOnFinish)
+                Toggle("Hide the Dock icon (menu bar only)".t, isOn: $state.hideDockIcon)
+                // 不加 frame(maxWidth:)：Form 会把各行的控件对齐到同一列，
+                // 一旦给不同的行设不同宽度，弹出按钮就会参差不齐
+                Picker("Concurrent uploads".t, selection: $state.maxConcurrent) {
                     ForEach([1, 2, 3, 5, 8], id: \.self) { Text("\($0)").tag($0) }
                 }
-                .frame(maxWidth: 240)
             }
 
-            Section("软件更新") {
-                Toggle("自动检查更新", isOn: $updater.automaticallyChecks)
-                Toggle("自动下载并安装更新", isOn: $updater.automaticallyDownloads)
+            Section {
+                Picker("Show as".t, selection: $state.finderMenuMode) {
+                    ForEach(FinderMenuMode.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text("Finder Context Menu".t)
+            } footer: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(state.finderMenuMode.detail)
+                    Text("Takes effect immediately. If the item is missing, turn Dropline on in System Settings → General → Login Items & Extensions → Finder Extensions.".t)
+                    Text("You can also drop files on the window or the Dock icon, upload from the clipboard, or use the menu bar icon.".t)
+                }
+                .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                Picker("Interface language".t, selection: $state.language) {
+                    ForEach(AppLanguage.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text("Language".t)
+            } footer: {
+                Text("Takes effect immediately, no restart needed.".t)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Software Update".t) {
+                Toggle("Check for updates automatically".t, isOn: $updater.automaticallyChecks)
+                Toggle("Download and install updates automatically".t,
+                       isOn: $updater.automaticallyDownloads)
                     .disabled(!updater.automaticallyChecks)
                 HStack {
-                    Text("当前版本")
+                    Text("Current version".t)
                     Spacer()
                     Text(updater.versionString).foregroundStyle(.secondary)
                 }
                 HStack {
-                    Text("上次检查")
+                    Text("Last checked".t)
                     Spacer()
                     if let d = updater.lastCheck {
                         Text(d.formatted(date: .abbreviated, time: .shortened))
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("从未").foregroundStyle(.secondary)
+                        Text("Never".t).foregroundStyle(.secondary)
                     }
                 }
                 HStack {
-                    Button("现在检查更新") { updater.checkForUpdates() }
+                    Button("Check Now".t) { updater.checkForUpdates() }
                         .disabled(!updater.canCheck)
                     Spacer()
                 }
@@ -74,10 +106,11 @@ struct GeneralSettings: View {
 
 struct AboutSettings: View {
     @EnvironmentObject var updater: UpdaterModel
+    /// 只为语言切换时跟着重绘（本页文案全走 .t）
+    @EnvironmentObject var state: AppState
 
     private let repoURL = "https://github.com/chen86860/dropline"
 
-    private var bundleID: String { Bundle.main.bundleIdentifier ?? "—" }
     private var copyright: String {
         Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""
     }
@@ -90,10 +123,10 @@ struct AboutSettings: View {
                         .resizable()
                         .frame(width: 96, height: 96)
                     Text("Dropline").font(.system(size: 24, weight: .semibold))
-                    Text("拖进去，链接就在剪贴板里")
+                    Text("Drop it in, the link is on your clipboard".t)
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                    Text("版本 \(updater.versionString)")
+                    Text("Version %@".t(updater.versionString))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
@@ -101,35 +134,11 @@ struct AboutSettings: View {
                 .padding(.top, 24)
 
                 HStack(spacing: 10) {
-                    Button("检查更新…") { updater.checkForUpdates() }
+                    Button("Check for Updates…".t) { updater.checkForUpdates() }
                         .disabled(!updater.canCheck)
-                    Button("项目主页") { open(repoURL) }
-                    Button("反馈问题") { open("\(repoURL)/issues") }
+                    Button("Project Home".t) { open(repoURL) }
+                    Button("Report an Issue".t) { open("\(repoURL)/issues") }
                 }
-
-                Form {
-                    LabeledContent("Bundle ID") {
-                        Text(bundleID).textSelection(.enabled).foregroundStyle(.secondary)
-                    }
-                    LabeledContent("更新源") {
-                        Text(updater.feedURL)
-                            .textSelection(.enabled)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                    LabeledContent("系统要求") {
-                        Text("macOS 13+ · Apple Silicon").foregroundStyle(.secondary)
-                    }
-                    LabeledContent("技术栈") {
-                        Text("Swift · SwiftUI · AppKit").foregroundStyle(.secondary)
-                    }
-                    LabeledContent("自动更新") {
-                        Link("Sparkle", destination: URL(string: "https://sparkle-project.org")!)
-                    }
-                }
-                .formStyle(.grouped)
-                .frame(maxHeight: 240)
 
                 if !copyright.isEmpty {
                     Text(copyright).font(.caption2).foregroundStyle(.tertiary)
@@ -142,59 +151,6 @@ struct AboutSettings: View {
 
     private func open(_ string: String) {
         if let url = URL(string: string) { NSWorkspace.shared.open(url) }
-    }
-}
-
-// MARK: - 右键 / 服务说明
-
-struct HelpSettings: View {
-    @EnvironmentObject var state: AppState
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                Form {
-                    Picker("访达右键菜单", selection: $state.finderMenuMode) {
-                        ForEach(FinderMenuMode.allCases) { Text($0.label).tag($0) }
-                    }
-                    Text("修改后立即生效，无需重启访达。")
-                        .font(.caption2).foregroundStyle(.secondary)
-                }
-                .formStyle(.grouped)
-                .padding(.bottom, 4)
-
-                Label("在 Finder 里右键上传", systemImage: "cursorarrow.click.2").font(.headline)
-                Text("""
-                选中任意文件（可多选）→ 右键 → 「使用 Dropline 上传」。
-
-                如果菜单里没有出现该项：
-                1. 确保 Dropline.app 已放入「应用程序」文件夹并至少启动过一次；
-                2. 打开「系统设置 → 通用 → 登录项与扩展 → 访达扩展」，打开 Dropline；
-                3. 仍未出现时，在终端执行：
-                   pluginkit -e use -i dev.emmmm.Dropline.Finder
-
-                另外在「键盘 → 键盘快捷键 → 服务 → 文件与文件夹」里还有一个同名的服务项，
-                可以给它设置快捷键（不受上面的显示方式设置影响）。
-                """)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
-
-                Divider()
-                Label("其他上传方式", systemImage: "sparkles").font(.headline)
-                Text("""
-                • 把文件拖到主窗口的虚线区域，或直接拖到 Dock 图标上；
-                • 主窗口点击「选择文件…」打开系统面板；
-                • 主窗口点击「从剪贴板上传」，可直接上传截图；
-                • 菜单栏（系统托盘）图标 → 「选择文件上传…」，并可查看/复制最近链接。
-                """)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
     }
 }
 
@@ -245,7 +201,7 @@ struct ProfilesSettings: View {
 
                     Spacer()
 
-                    Button("设为默认") {
+                    Button("Set as Default".t) {
                         if let id = selection { state.activeProfileID = id; state.saveProfiles() }
                     }
                     .buttonStyle(.link)
@@ -263,7 +219,7 @@ struct ProfilesSettings: View {
                 } else {
                     VStack {
                         Spacer()
-                        Text("左下角「+」新建一个图床配置").foregroundStyle(.secondary)
+                        Text("Create a host profile with “+” at the bottom left".t).foregroundStyle(.secondary)
                         Spacer()
                     }
                     .frame(maxWidth: .infinity)
@@ -290,8 +246,8 @@ struct ProfileEditor: View {
             VStack(alignment: .leading, spacing: 0) {
                 Form {
                     Section {
-                        TextField("名称", text: $profile.name)
-                        Picker("上传方式", selection: $profile.mode) {
+                        TextField("Name".t, text: $profile.name)
+                        Picker("Upload method".t, selection: $profile.mode) {
                             ForEach(UploadMode.allCases) { Text($0.label).tag($0) }
                         }
                     }
@@ -304,9 +260,9 @@ struct ProfileEditor: View {
                         responseSection
                     }
 
-                    Section("远端文件名 / 对象 Key 模板") {
+                    Section("Remote filename / object key template".t) {
                         TextField("keyTemplate", text: $profile.keyTemplate, prompt: Text("{{date}}/{{uuid}}.{{ext}}"))
-                        Text("可用变量：{{filename}} {{base}} {{ext}} {{uuid}} {{date}} {{datetime}} {{timestamp}} {{rand}}")
+                        Text("Variables: {{filename}} {{base}} {{ext}} {{uuid}} {{date}} {{datetime}} {{timestamp}} {{rand}}".t)
                             .font(.caption2).foregroundStyle(.secondary)
                     }
                 }
@@ -316,7 +272,7 @@ struct ProfileEditor: View {
                     Button {
                         Task { await runTest() }
                     } label: {
-                        if testing { ProgressView().controlSize(.small) } else { Text("测试上传") }
+                        if testing { ProgressView().controlSize(.small) } else { Text("Test Upload".t) }
                     }
                     .disabled(testing)
 
@@ -343,25 +299,25 @@ struct ProfileEditor: View {
     // MARK: HTTP
 
     @ViewBuilder private var httpSection: some View {
-        Section("请求") {
-            TextField("上传地址", text: $profile.endpoint,
+        Section("Request".t) {
+            TextField("Upload URL".t, text: $profile.endpoint,
                       prompt: Text("https://example.com/api/upload"))
-            Picker("方法", selection: $profile.httpMethod) {
+            Picker("Method".t, selection: $profile.httpMethod) {
                 ForEach(["POST", "PUT", "PATCH"], id: \.self) { Text($0).tag($0) }
             }
             if profile.mode == .multipart {
-                TextField("文件字段名", text: $profile.fileFieldName, prompt: Text("file"))
+                TextField("File field name".t, text: $profile.fileFieldName, prompt: Text("file"))
             }
-            KeyValueEditor(title: "自定义请求头", items: $profile.headers)
+            KeyValueEditor(title: "Custom headers".t, items: $profile.headers)
             if profile.mode == .multipart {
-                KeyValueEditor(title: "附加表单字段", items: $profile.formFields)
+                KeyValueEditor(title: "Extra form fields".t, items: $profile.formFields)
             }
         }
     }
 
     @ViewBuilder private var authSection: some View {
-        Section("认证") {
-            Picker("方式", selection: $profile.authKind) {
+        Section("Authentication".t) {
+            Picker("Kind".t, selection: $profile.authKind) {
                 ForEach(AuthKind.allCases) { Text($0.label).tag($0) }
             }
             switch profile.authKind {
@@ -370,28 +326,29 @@ struct ProfileEditor: View {
             case .bearer:
                 SecureField("Token", text: $secret)
             case .basic:
-                TextField("用户名", text: $profile.authKeyName)
-                SecureField("密码", text: $secret)
+                TextField("Username".t, text: $profile.authKeyName)
+                SecureField("Password".t, text: $secret)
             case .header:
-                TextField("Header 名", text: $profile.authKeyName, prompt: Text("Authorization"))
-                SecureField("Header 值", text: $secret)
+                TextField("Header name".t, text: $profile.authKeyName, prompt: Text("Authorization"))
+                SecureField("Header value".t, text: $secret)
             case .query:
-                TextField("参数名", text: $profile.authKeyName, prompt: Text("token"))
-                SecureField("参数值", text: $secret)
+                TextField("Parameter name".t, text: $profile.authKeyName, prompt: Text("token"))
+                SecureField("Parameter value".t, text: $secret)
             }
             if profile.authKind != .none {
-                Text("密钥保存在系统钥匙串，不会写入配置文件。")
+                Text("The secret is stored in the system keychain, never in the config file.".t)
                     .font(.caption2).foregroundStyle(.secondary)
             }
         }
     }
 
     @ViewBuilder private var responseSection: some View {
-        Section("响应解析") {
-            TextField("JSON 取值路径", text: $profile.responseURLPath, prompt: Text("data.url（留空表示响应体本身就是 URL）"))
-            TextField("最终 URL 模板（可选）", text: $profile.urlTemplate,
+        Section("Response".t) {
+            TextField("JSON path".t, text: $profile.responseURLPath,
+                      prompt: Text("data.url (empty means the body itself is the URL)".t))
+            TextField("Final URL template (optional)".t, text: $profile.urlTemplate,
                       prompt: Text("https://cdn.example.com/{{result}}"))
-            Text("模板中 {{result}} 为上一步解析出的值，也可使用 {{key}}、{{filename}} 等变量。")
+            Text("{{result}} is the value parsed above; {{key}}, {{filename}} and friends also work.".t)
                 .font(.caption2).foregroundStyle(.secondary)
         }
     }
@@ -399,16 +356,16 @@ struct ProfileEditor: View {
     // MARK: S3
 
     @ViewBuilder private var s3Section: some View {
-        Section("对象存储") {
+        Section("Object Storage".t) {
             TextField("Endpoint", text: $profile.s3Endpoint,
-                      prompt: Text("留空 = AWS；R2: https://<account>.r2.cloudflarestorage.com"))
+                      prompt: Text("Empty = AWS; R2: https://<account>.r2.cloudflarestorage.com".t))
             TextField("Region", text: $profile.s3Region, prompt: Text("auto / us-east-1"))
             TextField("Bucket", text: $profile.s3Bucket)
             TextField("Access Key ID", text: $profile.s3AccessKeyID)
             SecureField("Secret Access Key", text: $secret)
-            TextField("公开访问域名（可选）", text: $profile.s3PublicBaseURL,
+            TextField("Public base URL (optional)".t, text: $profile.s3PublicBaseURL,
                       prompt: Text("https://cdn.example.com"))
-            Text("留空则使用 Endpoint/Bucket/Key 作为返回链接。密钥保存在系统钥匙串。")
+            Text("Empty means the Endpoint/Bucket/Key URL is returned. The secret is stored in the system keychain.".t)
                 .font(.caption2).foregroundStyle(.secondary)
         }
     }
@@ -423,7 +380,7 @@ struct ProfileEditor: View {
         let tmp = FileManager.default.temporaryDirectory
             .appendingPathComponent("dropline-test-\(UUID().uuidString.prefix(6)).png")
         guard let png = Self.testPNG(), (try? png.write(to: tmp)) != nil else {
-            testResult = "无法生成测试图片"
+            testResult = "Could not generate a test image".t
             testOK = false
             return
         }
@@ -432,7 +389,7 @@ struct ProfileEditor: View {
         do {
             let url = try await UploadService.upload(fileURL: tmp, profile: profile) { _ in }
             testOK = true
-            testResult = "成功：\(url)"
+            testResult = "Success: %@".t(url)
         } catch {
             testOK = false
             testResult = error.localizedDescription
@@ -482,7 +439,7 @@ struct KeyValueEditor: View {
                 }
             }
             if items.isEmpty {
-                Text("（无）").font(.caption2).foregroundStyle(.tertiary)
+                Text("(none)".t).font(.caption2).foregroundStyle(.tertiary)
             }
         }
     }

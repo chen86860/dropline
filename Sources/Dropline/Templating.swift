@@ -63,7 +63,7 @@ enum Templating {
             return raw.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         guard let root = try? JSONSerialization.jsonObject(with: data) else {
-            throw UploadError.badResponse("响应不是合法 JSON，无法按路径 `\(trimmedPath)` 取值")
+            throw UploadError.badResponse("The response is not valid JSON, cannot read path `%@`".t(trimmedPath))
         }
         var node: Any? = root
         for comp in trimmedPath.split(separator: ".") {
@@ -75,12 +75,12 @@ enum Templating {
                 node = nil
             }
             if node == nil {
-                throw UploadError.badResponse("响应中找不到路径 `\(trimmedPath)`")
+                throw UploadError.badResponse("Path `%@` not found in the response".t(trimmedPath))
             }
         }
         if let s = node as? String { return s }
         if let n = node as? NSNumber { return n.stringValue }
-        throw UploadError.badResponse("路径 `\(trimmedPath)` 对应的值不是字符串")
+        throw UploadError.badResponse("The value at path `%@` is not a string".t(trimmedPath))
     }
 }
 

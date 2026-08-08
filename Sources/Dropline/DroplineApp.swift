@@ -15,18 +15,18 @@ struct DroplineApp: App {
         .defaultSize(width: 620, height: 620)
         .commands {
             CommandGroup(after: .appInfo) {
-                Button("检查更新…") { updater.checkForUpdates() }
+                Button("Check for Updates…".t) { updater.checkForUpdates() }
                     .disabled(!updater.canCheck)
             }
             CommandGroup(replacing: .newItem) {
-                Button("上传文件…") { state.pickFiles() }
+                Button("Upload Files…".t) { state.pickFiles() }
                     .keyboardShortcut("o", modifiers: .command)
             }
             CommandGroup(after: .pasteboard) {
-                Button("复制最近链接") {
+                Button("Copy Latest Link".t) {
                     if let last = state.history.first {
                         state.copy(text: state.formatted(url: last.url, filename: last.filename))
-                        state.lastMessage = "已复制链接"
+                        state.lastMessage = "Link copied".t
                     }
                 }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
@@ -59,53 +59,63 @@ struct MenuBarContent: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("选择文件上传…") { state.pickFiles() }
+        Button("Choose Files to Upload…".t) { state.pickFiles() }
             .keyboardShortcut("o", modifiers: [.command, .shift])
 
-        Button("上传剪贴板中的文件") {
+        Button("Upload File in Clipboard".t) {
             let pb = NSPasteboard.general
             if let urls = pb.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
                 let files = urls.filter { $0.isFileURL }
                 if !files.isEmpty { state.enqueue(files); return }
             }
-            state.lastMessage = "剪贴板里没有文件"
+            state.lastMessage = "No file in the clipboard".t
             NSSound.beep()
+        }
+
+        if !state.profiles.isEmpty {
+            Divider()
+            Picker("Host".t, selection: Binding(
+                get: { state.activeProfile?.id ?? UUID() },
+                set: { state.activeProfileID = $0; state.saveProfiles() }
+            )) {
+                ForEach(state.profiles) { Text($0.name).tag($0.id) }
+            }
         }
 
         if !state.items.isEmpty {
             Divider()
             let active = state.items.filter { !$0.isFinished }.count
-            Text(active > 0 ? "正在上传 \(active) 个文件…" : "队列已全部完成")
+            Text(active > 0 ? "Uploading %d file(s)…".t(active) : "All uploads finished".t)
         }
 
         if !state.history.isEmpty {
             Divider()
-            Text("最近上传")
-            ForEach(state.history.prefix(8)) { rec in
+            Text("Recent Uploads".t)
+            ForEach(state.history.prefix(5)) { rec in
                 Button(rec.filename) {
                     state.copy(text: state.formatted(url: rec.url, filename: rec.filename))
-                    state.lastMessage = "已复制链接"
+                    state.lastMessage = "Link copied".t
                 }
             }
         }
 
         Divider()
-        Button("打开主窗口") {
+        Button("Open Main Window".t) {
             if !AppDelegate.showMainWindow() {
                 openWindow(id: "main")
             }
         }
         if #available(macOS 14, *) {
-            SettingsLink { Text("设置…") }
+            SettingsLink { Text("Settings…".t) }
                 .keyboardShortcut(",", modifiers: .command)
         } else {
-            Button("设置…") { state.openSettings() }
+            Button("Settings…".t) { state.openSettings() }
                 .keyboardShortcut(",", modifiers: .command)
         }
-        Button("检查更新…") { updater.checkForUpdates() }
+        Button("Check for Updates…".t) { updater.checkForUpdates() }
             .disabled(!updater.canCheck)
         Divider()
-        Button("退出 Dropline") { NSApp.terminate(nil) }
+        Button("Quit Dropline".t) { NSApp.terminate(nil) }
             .keyboardShortcut("q", modifiers: .command)
     }
 }
@@ -115,7 +125,16 @@ struct MenuBarContent: View {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let serviceProvider = ServiceProvider()
 
+    /// 最近一次后台上传请求 / 用户主动要窗口的时间，用来判断「这个窗口是谁要的」
+    private static var lastUploadRequest = Date.distantPast
+    private static var lastWindowRequest = Date.distantPast
+    private static var launchTime = Date.distantPast
+    /// 抑制期内的窗口观察器，见 suppressMainWindow()
+    private static var windowWatcher: NSObjectProtocol?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Self.launchTime = Date()
+
         // 注册 Finder 右键「服务」
         NSApp.servicesProvider = serviceProvider
         NSUpdateDynamicServices()
@@ -135,8 +154,64 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         guard !files.isEmpty else { return }
         Task { @MainActor in
+            Self.uploadRequestedInBackground()
             AppState.shared.enqueue(files)
-            if !AppState.shared.hideDockIcon { AppDelegate.showMainWindow() }
+        }
+    }
+
+    /// 后台触发的上传（Finder 右键 / 服务 / 拖到 Dock）不抢前台：进度看菜单栏图标的进度环就够了。
+    ///
+    /// 难点在于「主窗口不是我们打开的」，有两条路都会把它摆出来，而且都绕不过去：
+    /// 一是冷启动 —— SwiftUI 的 WindowGroup 必定在启动时创建并显示主窗口，时机还不保证；
+    /// 二是 NSWorkspace.open 顺带触发的 reopen —— 它和用户点 Dock 图标是同一个事件，分不出来。
+    /// 所以不去猜窗口是谁开的，只认一条规则：**上传请求到达时没开着的主窗口，接下来几秒也不该冒出来**。
+    @MainActor
+    static func uploadRequestedInBackground() {
+        lastUploadRequest = Date()
+
+        // 用户本来就开着主窗口的话别去动它。例外是冷启动：刚启动那几秒里「已经开着」的
+        // 主窗口是 SwiftUI 自己摆出来的，恰恰是要收掉的那个。
+        let isLaunching = Date().timeIntervalSince(launchTime) < 3
+        guard isLaunching || !mainWindows.contains(where: \.isVisible) else { return }
+        suppressMainWindow()
+    }
+
+    /// 收起主窗口，并在随后几秒里盯着：它一出现就再收一次。
+    /// 窗口只是 orderOut，NSWindow 还在，之后「打开主窗口」能原样找回来。
+    @MainActor
+    private static func suppressMainWindow() {
+        orderOutMainWindows()
+        guard windowWatcher == nil else { return }
+
+        windowWatcher = NotificationCenter.default.addObserver(
+            forName: NSWindow.didUpdateNotification, object: nil, queue: .main
+        ) { _ in
+            Task { @MainActor in orderOutMainWindows() }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            if let watcher = windowWatcher {
+                NotificationCenter.default.removeObserver(watcher)
+                windowWatcher = nil
+            }
+        }
+    }
+
+    @MainActor
+    private static func orderOutMainWindows() {
+        // 抑制期内用户主动要了窗口（点 Dock、菜单栏「打开主窗口」）就让位
+        guard lastWindowRequest < lastUploadRequest else { return }
+        for window in mainWindows where window.isVisible {
+            window.orderOut(nil)
+        }
+    }
+
+    /// 主窗口候选：排除设置窗口、面板，以及菜单栏那种不能成为主窗口的窗口。
+    /// 没配置图床时 enqueue 会打开设置窗口，那个必须留着。
+    @MainActor
+    private static var mainWindows: [NSWindow] {
+        NSApp.windows.filter {
+            $0.canBecomeMain && !($0 is NSPanel)
+                && $0.identifier?.rawValue.localizedCaseInsensitiveContains("settings") != true
         }
     }
 
@@ -160,7 +235,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 点 Dock 图标 / 再次 open 时把主窗口找回来。
     /// 否则关掉主窗口后 App 只剩菜单栏，看起来像「卡死点不动」。
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if !flag { AppDelegate.showMainWindow() }
+        guard !flag else { return true }
+        // Finder 扩展那句 NSWorkspace.open 也会走到这里，而承载文件清单的 URL 事件
+        // 可能比 reopen 稍晚一点到。推迟一下再决定：这期间收到上传请求就不开窗，
+        // 免得窗口先弹出来再被收回去闪一下。
+        let reopenedAt = Date()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            guard Self.lastUploadRequest < reopenedAt else { return }
+            AppDelegate.showMainWindow()
+        }
         return true
     }
 
@@ -168,6 +251,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     @discardableResult
     static func showMainWindow() -> Bool {
+        lastWindowRequest = Date()
         NSApp.setActivationPolicy(AppState.shared.hideDockIcon ? .accessory : .regular)
         NSApp.activate(ignoringOtherApps: true)
         let candidates = NSApp.windows.filter { $0.canBecomeMain && !($0 is NSPanel) }

@@ -7,8 +7,8 @@ struct ContentView: View {
     @State private var tab: Tab = .queue
 
     enum Tab: String, CaseIterable, Identifiable {
-        case queue = "上传队列"
-        case history = "历史记录"
+        case queue = "Upload Queue"
+        case history = "History"
         var id: String { rawValue }
     }
 
@@ -30,10 +30,12 @@ struct ContentView: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 0) {
                     Picker("", selection: $tab) {
-                        ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
+                        ForEach(Tab.allCases) { Text($0.rawValue.t).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
+                    // 同上：选项只有文案变化时 SwiftUI 不会重建，换 id 强制刷新
+                    .id(state.language)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     Divider()
@@ -53,10 +55,10 @@ struct ContentView: View {
                 .foregroundStyle(.tint)
             VStack(alignment: .leading, spacing: 1) {
                 Text("Dropline").font(.headline)
-                Text("拖拽 · 面板 · 右键上传").font(.caption).foregroundStyle(.secondary)
+                Text("Drag · Panel · Right-click".t).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Picker("图床", selection: Binding(
+            Picker("Host".t, selection: Binding(
                 get: { state.activeProfile?.id ?? UUID() },
                 set: { state.activeProfileID = $0; state.saveProfiles() }
             )) {
@@ -71,14 +73,14 @@ struct ContentView: View {
                 SettingsLink {
                     Image(systemName: "gearshape")
                 }
-                .help("设置")
+                .help("Settings".t)
             } else {
                 Button {
                     state.openSettings()
                 } label: {
                     Image(systemName: "gearshape")
                 }
-                .help("设置")
+                .help("Settings".t)
             }
         }
         .padding(.horizontal, 16)
@@ -99,11 +101,11 @@ struct ContentView: View {
             VStack(spacing: 8) {
                 Image(systemName: isTargeted ? "square.and.arrow.down.fill" : "square.and.arrow.up")
                     .font(.system(size: 30, weight: .light))
-                Text(isTargeted ? "松手即可上传" : "把图片 / 视频 / 任意文件拖到这里")
+                Text(isTargeted ? "Release to upload".t : "Drop images, videos, or any file here".t)
                     .font(.callout)
                 HStack(spacing: 12) {
-                    Button("选择文件…") { state.pickFiles() }
-                    Button("从剪贴板上传") { pasteFromClipboard() }
+                    Button("Choose Files…".t) { state.pickFiles() }
+                    Button("Upload from Clipboard".t) { pasteFromClipboard() }
                 }
                 .padding(.top, 2)
             }
@@ -147,7 +149,7 @@ struct ContentView: View {
                 return
             }
         }
-        state.lastMessage = "剪贴板里没有可上传的图片或文件"
+        state.lastMessage = "No image or file in the clipboard".t
     }
 
     // MARK: 队列
@@ -155,24 +157,24 @@ struct ContentView: View {
     private var queueList: some View {
         Group {
             if state.items.isEmpty {
-                emptyHint("暂无上传任务")
+                emptyHint("No uploads yet".t)
             } else {
                 List {
                     ForEach(state.items) { item in
                         UploadRow(item: item)
                             .contextMenu {
                                 if case .done(let url) = item.status {
-                                    Button("复制链接") { state.copy(text: url) }
-                                    Button("复制 Markdown") {
+                                    Button("Copy Link".t) { state.copy(text: url) }
+                                    Button("Copy as Markdown".t) {
                                         state.copy(text: "![\(item.fileURL.lastPathComponent)](\(url))")
                                     }
-                                    Button("在浏览器打开") {
+                                    Button("Open in Browser".t) {
                                         if let u = URL(string: url) { NSWorkspace.shared.open(u) }
                                     }
                                     Divider()
                                 }
-                                Button("从队列移除") { state.remove(item.id) }
-                                Button("清除已完成") { state.clearFinished() }
+                                Button("Remove from Queue".t) { state.remove(item.id) }
+                                Button("Clear Finished".t) { state.clearFinished() }
                                     .disabled(!state.items.contains { $0.isFinished })
                             }
                     }
@@ -187,7 +189,7 @@ struct ContentView: View {
     private var historyList: some View {
         Group {
             if state.history.isEmpty {
-                emptyHint("还没有上传记录")
+                emptyHint("No history yet".t)
             } else {
                 List {
                     ForEach(state.history) { rec in
@@ -202,20 +204,20 @@ struct ContentView: View {
                             Text(rec.date, style: .time).font(.caption2).foregroundStyle(.tertiary)
                             Button {
                                 state.copy(text: state.formatted(url: rec.url, filename: rec.filename))
-                                state.lastMessage = "已复制链接"
+                                state.lastMessage = "Link copied".t
                             } label: {
                                 Image(systemName: "doc.on.doc")
                             }
                             .buttonStyle(.borderless)
                         }
                         .contextMenu {
-                            Button("复制链接") { state.copy(text: rec.url) }
-                            Button("复制 Markdown") { state.copy(text: "![\(rec.filename)](\(rec.url))") }
-                            Button("在浏览器打开") {
+                            Button("Copy Link".t) { state.copy(text: rec.url) }
+                            Button("Copy as Markdown".t) { state.copy(text: "![\(rec.filename)](\(rec.url))") }
+                            Button("Open in Browser".t) {
                                 if let u = URL(string: rec.url) { NSWorkspace.shared.open(u) }
                             }
                             Divider()
-                            Button("清空历史") { state.clearHistory() }
+                            Button("Clear History".t) { state.clearHistory() }
                         }
                     }
                 }
@@ -250,7 +252,7 @@ struct UploadRow: View {
                 }
                 switch item.status {
                 case .waiting:
-                    Text("等待中…").font(.caption).foregroundStyle(.secondary)
+                    Text("Waiting…".t).font(.caption).foregroundStyle(.secondary)
                 case .uploading:
                     ProgressView(value: item.progress).progressViewStyle(.linear)
                 case .done(let url):
@@ -263,7 +265,7 @@ struct UploadRow: View {
             if case .done(let url) = item.status {
                 Button {
                     state.copy(text: state.formatted(url: url, filename: item.fileURL.lastPathComponent))
-                    state.lastMessage = "已复制链接"
+                    state.lastMessage = "Link copied".t
                 } label: {
                     Image(systemName: "doc.on.doc")
                 }

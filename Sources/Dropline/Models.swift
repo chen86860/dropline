@@ -19,9 +19,9 @@ enum UploadMode: String, Codable, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .multipart: return "表单上传 (multipart/form-data)"
-        case .binary:    return "二进制上传 (PUT/POST raw body)"
-        case .s3:        return "S3 兼容对象存储 (AWS/R2/MinIO)"
+        case .multipart: return "Form upload (multipart/form-data)".t
+        case .binary:    return "Binary upload (PUT/POST raw body)".t
+        case .s3:        return "S3-compatible object storage (AWS/R2/MinIO)".t
         }
     }
 }
@@ -39,11 +39,11 @@ enum AuthKind: String, Codable, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .none:   return "无"
+        case .none:   return "None".t
         case .bearer: return "Bearer Token"
-        case .basic:  return "Basic (用户名 + 密码)"
-        case .header: return "自定义请求头"
-        case .query:  return "URL 查询参数"
+        case .basic:  return "Basic (username + password)".t
+        case .header: return "Custom header".t
+        case .query:  return "URL query parameter".t
         }
     }
 }
@@ -52,7 +52,7 @@ enum AuthKind: String, Codable, CaseIterable, Identifiable {
 
 struct UploaderProfile: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
-    var name: String = "新建配置"
+    var name: String = "New Profile"
     var mode: UploadMode = .multipart
 
     // 通用 HTTP
@@ -88,8 +88,8 @@ struct UploaderProfile: Codable, Identifiable, Hashable {
 
     var subtitle: String {
         switch mode {
-        case .s3: return s3Bucket.isEmpty ? "S3 兼容存储" : "s3://\(s3Bucket)"
-        default:  return endpoint.isEmpty ? "未配置地址" : endpoint
+        case .s3: return s3Bucket.isEmpty ? "S3-compatible storage".t : "s3://\(s3Bucket)"
+        default:  return endpoint.isEmpty ? "No URL configured".t : endpoint
         }
     }
 }
@@ -99,23 +99,23 @@ struct UploaderProfile: Codable, Identifiable, Hashable {
 enum ProfilePresets {
     static var all: [(String, UploaderProfile)] {
         [
-            ("空白 · 自定义 HTTP", blankHTTP),
-            ("空白 · 自定义二进制 PUT", blankBinary),
+            ("Blank · Custom HTTP".t, blankHTTP),
+            ("Blank · Custom binary PUT".t, blankBinary),
             ("Amazon S3", awsS3),
             ("Cloudflare R2", r2),
-            ("阿里云 OSS（S3 兼容）", aliyunOSS),
-            ("腾讯云 COS（S3 兼容）", tencentCOS),
-            ("MinIO / 自建 S3", minio),
+            ("Aliyun OSS (S3-compatible)".t, aliyunOSS),
+            ("Tencent COS (S3-compatible)".t, tencentCOS),
+            ("MinIO / self-hosted S3".t, minio),
             ("SM.MS", smms),
             ("Imgur", imgur),
             ("Lsky Pro / Chevereto", chevereto),
-            ("EasyImage / PicGo 自定义", easyimage),
+            ("EasyImage / PicGo custom".t, easyimage),
         ]
     }
 
     static var blankHTTP: UploaderProfile {
         var p = UploaderProfile()
-        p.name = "自定义上传"
+        p.name = "Custom Upload".t
         p.mode = .multipart
         p.responseURLPath = "url"
         return p
@@ -123,7 +123,7 @@ enum ProfilePresets {
 
     static var blankBinary: UploaderProfile {
         var p = UploaderProfile()
-        p.name = "自定义 PUT 上传"
+        p.name = "Custom PUT Upload".t
         p.mode = .binary
         p.httpMethod = "PUT"
         p.endpoint = "https://your-domain.com/files/{{key}}"
@@ -151,12 +151,12 @@ enum ProfilePresets {
     }
 
     static var aliyunOSS: UploaderProfile {
-        s3Base("阿里云 OSS", region: "oss-cn-hangzhou",
+        s3Base("Aliyun OSS".t, region: "oss-cn-hangzhou",
                endpoint: "https://oss-cn-hangzhou.aliyuncs.com")
     }
 
     static var tencentCOS: UploaderProfile {
-        s3Base("腾讯云 COS", region: "ap-guangzhou",
+        s3Base("Tencent COS".t, region: "ap-guangzhou",
                endpoint: "https://cos.ap-guangzhou.myqcloud.com")
     }
 

@@ -27,6 +27,7 @@ macOS 原生上传工具：拖拽、右键、菜单栏一键上传图片 / 视�
 - **任意文件类型**：大视频走临时文件流式上传，不占内存
 - 多图床配置随时切换、并发上传、实时进度、历史记录
 - 密钥存**系统钥匙串**，不写入配置文件
+- **中英双语**：跟随系统语言（非中文一律英文），也可在设置 → 通用里手动切换
 - 内置 [Sparkle](https://sparkle-project.org) 自动更新
 
 ## 支持的图床
@@ -78,8 +79,16 @@ xattr -dr com.apple.quarantine /Applications/Dropline.app
 ./build.sh               # 只构建到 dist/
 ```
 
-> 磁盘上只能存在一份 Dropline.app——两份副本会让 LaunchServices 在它们之间摇摆，
-> 右键服务菜单随之失效。`--install` 用 `mv` 而非 `cp`，装完 `dist/` 里不会有残留。
+`--install` 会先退出正在运行的 Dropline 与访达扩展、注销并删除 `/Applications` 里的旧版本，
+再把新版本装进去、重新注册服务菜单与访达扩展，最后启动它。**图床配置和密钥不受影响** ——
+它们分别存在 UserDefaults（`~/Library/Preferences/dev.emmmm.Dropline.plist`）和登录钥匙串里，
+按 Bundle ID 索引，删 `.app` 不会带走。
+
+> LaunchServices 里只能有一份 Dropline.app 注册——多份会让它在其间摇摆，右键服务菜单随之失效。
+> `--install` 每次都会把库里所有 Dropline.app 注册扫出来逐个注销再重新登记。最常见的多余注册
+> 来自装过的 DMG：卷推出后注册仍留在库里，路径早已不存在，这种「死」注册照样能用
+> `lsregister -u <原路径>` 销掉。其它位置真实存在的副本只注销、不替你删文件。
+> `--install` 用 `mv` 而非 `cp`，装完 `dist/` 里也不会有残留。
 
 ## 打包 DMG
 
@@ -95,7 +104,8 @@ xattr -dr com.apple.quarantine /Applications/Dropline.app
 先在 [CHANGELOG.md](CHANGELOG.md) 顶部加一节 `## [1.0.1] - 日期`，然后二选一：
 
 **在 GitHub 上发（推荐）**：Actions → Release → Run workflow，填版本号。
-CI 会完成构建、打 DMG、签名 appcast、发 Release 并把更新说明回写到仓库。
+CI 会完成构建、打 DMG、签名 appcast，并把 DMG、更新用 zip、增量包和 `appcast.xml` 一起
+发布为 Release 资产。仓库里不再保留 appcast 或更新说明文件。
 首次使用需要配置签名私钥：
 
 ```bash
@@ -107,11 +117,11 @@ rm sparkle-private-key.txt
 **在本机发**：
 
 ```bash
-./Tools/sparkle.sh release 1.0.1   # 构建 → 打包 → EdDSA 签名 → 生成 appcast → 发 Release → 推送
+./Tools/sparkle.sh release 1.0.1   # 构建 → 打包 → EdDSA 签名 → 生成 appcast → 发 Release
 ```
 
-CHANGELOG 是发布说明的唯一来源：脚本从中抽取对应版本的条目，转成 HTML 供 Sparkle
-更新弹窗显示，同时用 Markdown 原文作为 GitHub Release 正文。**没写条目会直接报错中止**，
+CHANGELOG 是发布说明的唯一来源：脚本从中抽取对应版本的条目，转成 HTML 片段内嵌进
+appcast 供 Sparkle 更新弹窗显示，同时用 Markdown 原文作为 GitHub Release 正文。**没写条目会直接报错中止**，
 不会发出没有说明的版本。
 
 更新包用 EdDSA 签名，公钥在 Info.plist，私钥存登录钥匙串。
@@ -135,8 +145,9 @@ Sources/Dropline/
   Notifier.swift       系统通知
   TrayIcon.swift       菜单栏进度环图标
   Keychain.swift       密钥存取
+  Localization.swift   中英文案表（源码写英文，中文查表，查不到兜底英文）
   ContentView.swift    主窗口
-  SettingsView.swift   设置（图床 / 通用 / 右键上传 / 关于）
+  SettingsView.swift   设置（通用 / 图床 / 关于）
 
 Sources/DroplineFinder/
   FinderSyncExtension.swift   Finder 右键扩展（沙盒，经 dropline:// 把选中文件交给主 App）

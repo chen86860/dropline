@@ -17,7 +17,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         guard available else { return }
         let center = UNUserNotificationCenter.current()
         center.delegate = self
-        let copy = UNNotificationAction(identifier: copyActionID, title: "复制链接", options: [])
+        let copy = UNNotificationAction(identifier: copyActionID, title: "Copy Link".t, options: [])
         center.setNotificationCategories([
             UNNotificationCategory(identifier: categoryID, actions: [copy],
                                    intentIdentifiers: [], options: [])
@@ -28,14 +28,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func uploadSucceeded(filename: String, url: String) {
-        post(title: "上传完成",
+        post(title: "Upload finished".t,
              body: filename,
              subtitle: url,
              userInfo: ["url": url])
     }
 
     func uploadFailed(filename: String, reason: String) {
-        post(title: "上传失败", body: filename, subtitle: reason, userInfo: [:])
+        post(title: "Upload failed".t, body: filename, subtitle: reason, userInfo: [:])
     }
 
     private func post(title: String, body: String, subtitle: String, userInfo: [String: Any]) {
@@ -69,7 +69,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                 let pb = NSPasteboard.general
                 pb.clearContents()
                 pb.setString(url, forType: .string)
-                AppState.shared.lastMessage = "已复制链接"
+                AppState.shared.lastMessage = "Link copied".t
             }
             handler()
         }

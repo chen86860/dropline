@@ -1,4 +1,7 @@
 // 生成 App 图标 PNG（1024x1024）。由 build.sh 调用。
+//
+// 符号是 Lucide 的 arrow-up-from-line（箭头 + 底部横线，全描边）。
+// 同一套几何也用在菜单栏图标上，改这里请同步 Sources/Dropline/TrayIcon.swift。
 import AppKit
 
 let size = 1024.0
@@ -17,31 +20,39 @@ let gradient = NSGradient(colors: [
 ])!
 gradient.draw(in: path, angle: -90)
 
-// 上传箭头
-let arrow = NSBezierPath()
-let cx = size / 2
-let stemW = size * 0.11
-let top = size * 0.72
-let bottom = size * 0.28
-let headW = size * 0.30
-let headH = size * 0.20
-arrow.move(to: NSPoint(x: cx, y: top))
-arrow.line(to: NSPoint(x: cx + headW / 2, y: top - headH))
-arrow.line(to: NSPoint(x: cx + stemW / 2, y: top - headH))
-arrow.line(to: NSPoint(x: cx + stemW / 2, y: bottom))
-arrow.line(to: NSPoint(x: cx - stemW / 2, y: bottom))
-arrow.line(to: NSPoint(x: cx - stemW / 2, y: top - headH))
-arrow.line(to: NSPoint(x: cx - headW / 2, y: top - headH))
-arrow.close()
-NSColor.white.setFill()
-arrow.fill()
+/// Lucide arrow-up-from-line，原始 viewBox 24×24、stroke-width 2、圆头圆角：
+///     m18 9-6-6-6 6 / M12 3v14 / M5 21h14
+/// SVG 的 y 轴朝下，这里换算成 AppKit 的 y 轴朝上（y' = 24 - y）：
+///     箭头 (6,15)→(12,21)→(18,15)   竖杆 (12,21)→(12,7)   底线 (5,3)→(19,3)
+/// 含描边后的包围盒：带底线 x∈[4,20] y∈[2,22]；不带底线 x∈[5,19] y∈[6,22]。
+func drawUploadGlyph(centeredIn box: NSRect, height: CGFloat, baseline: Bool) {
+    let unitH: CGFloat = baseline ? 20 : 16
+    let unitCenterY: CGFloat = baseline ? 12 : 14      // 包围盒中心在 24 单位坐标里的 y
+    let s = height / unitH
+    func p(_ x: CGFloat, _ y: CGFloat) -> NSPoint {
+        NSPoint(x: box.midX + (x - 12) * s, y: box.midY + (y - unitCenterY) * s)
+    }
 
-// 底部托盘线
-let tray = NSBezierPath(roundedRect: NSRect(x: cx - size * 0.20, y: size * 0.19,
-                                            width: size * 0.40, height: size * 0.045),
-                        xRadius: size * 0.022, yRadius: size * 0.022)
-NSColor(white: 1, alpha: 0.85).setFill()
-tray.fill()
+    let lineWidth = 2 * s
+    func stroke(_ make: (NSBezierPath) -> Void) {
+        let path = NSBezierPath()
+        make(path)
+        path.lineWidth = lineWidth
+        path.lineCapStyle = .round
+        path.lineJoinStyle = .round
+        path.stroke()
+    }
+
+    // 竖杆先画，箭头压在上面，接缝被圆角盖住
+    stroke { $0.move(to: p(12, 21)); $0.line(to: p(12, 7)) }
+    stroke { $0.move(to: p(6, 15)); $0.line(to: p(12, 21)); $0.line(to: p(18, 15)) }
+    if baseline {
+        stroke { $0.move(to: p(5, 3)); $0.line(to: p(19, 3)) }
+    }
+}
+
+NSColor.white.setStroke()
+drawUploadGlyph(centeredIn: rect, height: size * 0.44, baseline: true)
 
 NSGraphicsContext.restoreGraphicsState()
 

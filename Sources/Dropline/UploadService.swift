@@ -8,12 +8,12 @@ enum UploadError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidEndpoint(let s): return "上传地址无效：\(s)"
+        case .invalidEndpoint(let s): return "Invalid upload URL: %@".t(s)
         case .http(let code, let body):
             let snippet = body.count > 300 ? String(body.prefix(300)) + "…" : body
             return "HTTP \(code)\(snippet.isEmpty ? "" : "：\(snippet)")"
         case .badResponse(let s): return s
-        case .misconfigured(let s): return "配置不完整：\(s)"
+        case .misconfigured(let s): return "Incomplete configuration: %@".t(s)
         }
     }
 }
@@ -68,7 +68,7 @@ enum UploadService {
                                    progress: @escaping @Sendable (Double) -> Void) async throws -> String {
         let rendered = Templating.render(profile.endpoint, ctx)
         guard var comps = URLComponents(string: rendered), comps.scheme != nil else {
-            throw UploadError.invalidEndpoint(rendered.isEmpty ? "(空)" : rendered)
+            throw UploadError.invalidEndpoint(rendered.isEmpty ? "(empty)".t : rendered)
         }
         if profile.authKind == .query, !profile.authKeyName.isEmpty {
             var items = comps.queryItems ?? []
@@ -169,9 +169,9 @@ enum UploadService {
                                  secret: String,
                                  ctx: [String: String],
                                  progress: @escaping @Sendable (Double) -> Void) async throws -> String {
-        guard !profile.s3Bucket.isEmpty else { throw UploadError.misconfigured("缺少 Bucket") }
+        guard !profile.s3Bucket.isEmpty else { throw UploadError.misconfigured("missing Bucket".t) }
         guard !profile.s3AccessKeyID.isEmpty, !secret.isEmpty else {
-            throw UploadError.misconfigured("缺少 Access Key ID / Secret Access Key")
+            throw UploadError.misconfigured("missing Access Key ID / Secret Access Key".t)
         }
         let key = ctx["key"].flatMap { $0.isEmpty ? nil : $0 } ?? fileURL.lastPathComponent
         let region = profile.s3Region.isEmpty ? "auto" : profile.s3Region

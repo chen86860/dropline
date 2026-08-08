@@ -38,7 +38,7 @@ final class UpdaterModel: ObservableObject {
     }
 
     var feedURL: String {
-        Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String ?? "(未配置)"
+        Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String ?? "(not configured)".t
     }
 
     var versionString: String {

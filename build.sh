@@ -9,8 +9,9 @@ BUNDLE_ID="dev.emmmm.Dropline"
 # 版本号默认取 CHANGELOG.md 里最新的一条，避免和发布内容脱节
 VERSION="${DROPLINE_VERSION:-$("$ROOT/Tools/changelog.py" --latest)}"
 
-# Sparkle 自动更新
-FEED_URL="https://raw.githubusercontent.com/chen86860/dropline/main/appcast.xml"
+# Sparkle 自动更新：appcast.xml 作为 Release 资产随每次发布上传，
+# /releases/latest/download/ 永远指向最新一个正式 Release，无需回写仓库
+FEED_URL="https://github.com/chen86860/dropline/releases/latest/download/appcast.xml"
 # 与钥匙串里的 EdDSA 私钥配对；用 Tools/sparkle.sh pubkey 可重新打印
 SU_PUBLIC_KEY="F7NNg2b/Lpgv6EprFu5YcR6DApLrwc5yfPOmI7o5hOk="
 
@@ -103,6 +104,11 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleVersion</key>           <string>${VERSION}</string>
     <key>CFBundleIconFile</key>          <string>Dropline</string>
     <key>LSMinimumSystemVersion</key>    <string>13.0</string>
+    <!-- 界面语言由 App 自己按 Locale 解析（设置里可覆盖），这里只声明支持的语言，
+         让系统知道服务菜单等系统级文案有中英两份 -->
+    <key>CFBundleDevelopmentRegion</key> <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array><string>en</string><string>zh-Hans</string></array>
     <key>NSHighResolutionCapable</key>   <true/>
     <key>NSHumanReadableCopyright</key>  <string>MIT License · github.com/chen86860/dropline</string>
 
@@ -135,12 +141,19 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 
     <!-- Finder 右键 →「服务」→「使用 Dropline 上传」
          注意：文件类服务必须用 NSSendTypes = NSFilenamesPboardType 搭配
-         NSRequiredContext/NSTextContent = FilePath；换成 NSSendFileTypes 菜单不会出现。 -->
+         NSRequiredContext/NSTextContent = FilePath；换成 NSSendFileTypes 菜单不会出现。
+         NSMenuItem 是「语言 → 标题」的字典，default 兜底英文；这项由系统语言决定，
+         跟随不了 App 内的语言设置。 -->
     <key>NSServices</key>
     <array>
         <dict>
             <key>NSMenuItem</key>
-            <dict><key>default</key><string>使用 Dropline 上传</string></dict>
+            <dict>
+                <key>default</key>  <string>Upload with Dropline</string>
+                <key>zh_CN</key>    <string>使用 Dropline 上传</string>
+                <key>zh-Hans</key>  <string>使用 Dropline 上传</string>
+                <key>Chinese</key>  <string>使用 Dropline 上传</string>
+            </dict>
             <key>NSMessage</key>    <string>uploadFromService</string>
             <key>NSPortName</key>   <string>Dropline</string>
             <key>NSRequiredContext</key>
@@ -179,6 +192,17 @@ codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$APP"
 
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
+# 列出 LaunchServices 里注册的所有 Dropline.app。dump 出来每行形如
+#   path:                       /Applications/Dropline.app (0xabb0)
+# 末尾那个十六进制 ID 必须去掉，否则按路径结尾匹配永远匹配不上。
+dropline_registrations() {
+  "$LSREGISTER" -dump 2>/dev/null \
+    | sed -n 's/^[[:space:]]*path:[[:space:]]*//p' \
+    | sed 's/ (0x[0-9a-f]*)$//' \
+    | grep -E '/Dropline\.app$' \
+    | sort -u
+}
+
 # 打包发布时不要注册 dist/ 里的副本，否则会和 /Applications 里的形成两份注册
 if [ "${DROPLINE_SKIP_REGISTER:-0}" = "1" ]; then
   echo ""
@@ -188,13 +212,39 @@ fi
 
 # 右键「服务」菜单只应有一份注册；同一 Bundle ID 存在多份副本会导致菜单项消失或点击无响应。
 if [ "${1:-}" = "--install" ]; then
-  echo "==> 安装到 /Applications"
-  osascript -e 'tell application "Dropline" to quit' 2>/dev/null || true
-  pkill -x Dropline 2>/dev/null || true
-  sleep 1
-  "$LSREGISTER" -u /Applications/Dropline.app 2>/dev/null || true
-  "$LSREGISTER" -u "$APP" 2>/dev/null || true
+  echo "==> 退出正在运行的 Dropline"
+  # 先礼后兵：正在跑才发退出事件（不判断的话 osascript 会把没在跑的 App 先拉起来再退）
+  if pgrep -x Dropline >/dev/null 2>&1; then
+    osascript -e 'tell application id "dev.emmmm.Dropline" to quit' >/dev/null 2>&1 || true
+    for _ in $(seq 20); do pgrep -x Dropline >/dev/null 2>&1 || break; sleep 0.2; done
+    pkill -x Dropline 2>/dev/null || true
+  fi
+  # 扩展是独立进程，旧版留着会继续用旧代码弹菜单
+  pkill -f 'DroplineFinder' 2>/dev/null || true
+
+  echo "==> 卸载旧版本"
+  # 图床配置存在 UserDefaults（~/Library/Preferences/dev.emmmm.Dropline.plist）和登录钥匙串里，
+  # 都按 Bundle ID 索引，不随 .app 删除 —— 所以下面只删程序本体，配置和密钥原样保留。
   rm -rf /Applications/Dropline.app
+
+  # 同一 Bundle ID 在 LaunchServices 里有多份注册，右键服务菜单就会失效。
+  # 最常见的来源是装过的 DMG：卷推出后注册仍留在库里，路径早已不存在
+  # （这种「死」注册照样能用 lsregister -u 按原路径销掉）。
+  echo "==> 清理旧注册"
+  while IFS= read -r stale; do
+    [ -n "$stale" ] || continue
+    if [ -e "$stale" ]; then
+      # 可能是用户自己放在别处的副本或挂载中的 DMG，只注销、不替他删文件
+      echo "    注销另一份副本（文件保留，不再需要请自行删除）：$stale"
+    else
+      echo "    清除已失效的残留注册：$stale"
+    fi
+    "$LSREGISTER" -u "$stale" 2>/dev/null || true
+  done < <(dropline_registrations)
+  "$LSREGISTER" -u "$APP" 2>/dev/null || true
+  "$LSREGISTER" -gc 2>/dev/null || true   # 压缩数据库，清掉 GC 得掉的陈旧条目
+
+  echo "==> 安装到 /Applications"
   # 用 mv 而不是 cp：dist/ 里若残留一份副本，LaunchServices 会自动把它重新索引，
   # 变成同一 Bundle ID 的两份注册，右键服务菜单就会消失。
   mv "$APP" /Applications/Dropline.app
@@ -213,13 +263,23 @@ killall -u "$USER" pbs 2>/dev/null || true   # 让 pbs 重新读取注册表
 sleep 1
 /System/Library/CoreServices/pbs -flush >/dev/null 2>&1 || true
 
-DUPES=$("$LSREGISTER" -dump 2>/dev/null | grep -c "path: .*/Dropline.app" || true)
+DUPES=$(dropline_registrations | grep -c . || true)
 if [ "${DUPES:-0}" -gt 1 ]; then
-  echo "⚠️  LaunchServices 中存在多份 Dropline.app 注册，右键服务可能失效。"
-  "$LSREGISTER" -dump 2>/dev/null | grep "path: .*/Dropline.app" | sort -u
+  echo "⚠️  LaunchServices 中存在多份 Dropline.app 注册，右键服务可能失效："
+  dropline_registrations | sed 's/^/      /'
+  echo "    逐个注销（路径已不存在也照样能销）："
+  echo "      $LSREGISTER -u \"<上面的路径>\" && $LSREGISTER -gc"
+fi
+
+if [ "${1:-}" = "--install" ]; then
+  # 换掉 .app 之后访达扩展的启用状态可能丢失，重新打开一次
+  echo "==> 启用访达扩展"
+  pluginkit -a "$TARGET/Contents/PlugIns/DroplineFinder.appex" 2>/dev/null || true
+  pluginkit -e use -i dev.emmmm.Dropline.Finder 2>/dev/null || true
+
+  echo "==> 启动 Dropline"
+  open "$TARGET"
 fi
 
 echo ""
 echo "✅ 完成：$TARGET"
-echo "   打开：open \"$TARGET\""
-[ "${1:-}" = "--install" ] || echo "   安装到应用程序文件夹（推荐，右键服务更稳定）：./build.sh --install"

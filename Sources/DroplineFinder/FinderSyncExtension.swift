@@ -19,7 +19,9 @@ final class DroplineFinderSync: FIFinderSync {
     // MARK: 工具栏
 
     override var toolbarItemName: String { "Dropline" }
-    override var toolbarItemToolTip: String { "上传到 Dropline" }
+    override var toolbarItemToolTip: String {
+        isChinese ? "上传到 Dropline" : "Upload to Dropline"
+    }
     override var toolbarItemImage: NSImage {
         NSImage(systemSymbolName: "arrow.up.circle", accessibilityDescription: "Dropline")
             ?? NSImage(size: NSSize(width: 1, height: 1))
@@ -27,14 +29,26 @@ final class DroplineFinderSync: FIFinderSync {
 
     // MARK: 右键菜单
 
-    /// 主 App 写在本扩展容器里的展示方式配置。每次弹菜单都读一次，改完立即生效。
-    /// 取值：icon（带图标）/ text（纯文字）/ hidden（不显示），缺省为 icon。
-    private var menuMode: String {
+    /// 主 App 写在本扩展容器里的配置。每次弹菜单都读一次，改完立即生效。
+    private func sharedValue(_ fileName: String) -> String? {
         let url = URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("Library/Application Support/Dropline/finder-menu.txt")
-        guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return "icon" }
-        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        return ["icon", "text", "hidden"].contains(value) ? value : "icon"
+            .appendingPathComponent("Library/Application Support/Dropline/\(fileName)")
+        guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        return raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 取值：icon（带图标）/ text（不带图标）/ hidden（不显示），缺省为 icon
+    private var menuMode: String {
+        guard let value = sharedValue("finder-menu.txt"),
+              ["icon", "text", "hidden"].contains(value) else { return "icon" }
+        return value
+    }
+
+    /// 界面语言。主 App 写的是解析后的结果；文件还不存在时（扩展先跑起来）
+    /// 退回自己判断系统语言，同样是「中文用中文，其余一律英文」。
+    private var isChinese: Bool {
+        if let value = sharedValue("finder-language.txt") { return value == "zh" }
+        return (Locale.preferredLanguages.first ?? "en").hasPrefix("zh")
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
@@ -49,7 +63,7 @@ final class DroplineFinderSync: FIFinderSync {
         guard mode != "hidden" else { return nil }
 
         let menu = NSMenu(title: "")
-        let item = NSMenuItem(title: "使用 Dropline 上传",
+        let item = NSMenuItem(title: isChinese ? "使用 Dropline 上传" : "Upload with Dropline",
                               action: #selector(uploadSelection(_:)),
                               keyEquivalent: "")
         item.target = self

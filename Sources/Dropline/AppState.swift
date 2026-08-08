@@ -54,8 +54,20 @@ final class AppState: ObservableObject {
     @Published var finderMenuMode: FinderMenuMode = .default {
         didSet {
             UserDefaults.standard.set(finderMenuMode.rawValue, forKey: "finderMenuMode")
-            FinderMenuMode.writeShared(finderMenuMode)
+            syncFinderExtension()
         }
+    }
+    /// 界面语言。改动后要立刻同步给 L10n（界面靠 @Published 重绘）和访达扩展。
+    @Published var language: AppLanguage = .system {
+        didSet {
+            UserDefaults.standard.set(language.rawValue, forKey: "language")
+            L10n.language = language
+            syncFinderExtension()
+        }
+    }
+
+    private func syncFinderExtension() {
+        FinderMenuMode.writeShared(mode: finderMenuMode, language: L10n.resolved)
     }
 
     /// 菜单栏进度：nil 表示空闲；否则是所有未完成任务的平均进度
@@ -106,8 +118,11 @@ final class AppState: ObservableObject {
         notifyOnFinish = d.object(forKey: "notifyOnFinish") as? Bool ?? true
         finderMenuMode = (d.string(forKey: "finderMenuMode").flatMap(FinderMenuMode.init(rawValue:)))
             ?? .default
+        // 语言要在其它文案被读到之前先定下来
+        language = (d.string(forKey: "language").flatMap(AppLanguage.init(rawValue:))) ?? .system
+        L10n.language = language
         // 启动时同步一次：扩展容器可能刚被系统创建，或被用户清理过
-        FinderMenuMode.writeShared(finderMenuMode)
+        syncFinderExtension()
     }
 
     func saveProfiles() {
@@ -148,7 +163,7 @@ final class AppState: ObservableObject {
 
     func enqueue(_ urls: [URL]) {
         guard activeProfile != nil else {
-            lastMessage = "请先在「设置」中添加一个上传配置"
+            lastMessage = "Add an upload profile in Settings first".t
             NSSound.beep()
             openSettings()
             return
@@ -221,12 +236,14 @@ final class AppState: ObservableObject {
             if history.count > 300 { history.removeLast(history.count - 300) }
             saveHistory()
             if autoCopyURL { copy(text: formatted(url: url, filename: item.fileURL.lastPathComponent)) }
-            lastMessage = "已上传 \(item.fileURL.lastPathComponent)" + (autoCopyURL ? "，链接已复制" : "")
+            lastMessage = autoCopyURL
+                ? "Uploaded %@, link copied".t(item.fileURL.lastPathComponent)
+                : "Uploaded %@".t(item.fileURL.lastPathComponent)
             if notifyOnFinish {
                 Notifier.shared.uploadSucceeded(filename: item.fileURL.lastPathComponent, url: url)
             }
         } else if case .failure(let err) = result {
-            lastMessage = "上传失败：\(err.localizedDescription)"
+            lastMessage = "Upload failed: %@".t(err.localizedDescription)
             NSSound.beep()
             if notifyOnFinish {
                 Notifier.shared.uploadFailed(filename: item.fileURL.lastPathComponent,
@@ -262,8 +279,8 @@ final class AppState: ObservableObject {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = true
         panel.canChooseFiles = true
-        panel.message = "选择要上传的图片 / 视频 / 任意文件"
-        panel.prompt = "上传"
+        panel.message = "Choose images, videos, or any file to upload".t
+        panel.prompt = "Upload".t
         if panel.runModal() == .OK {
             enqueue(panel.urls)
         }
@@ -280,14 +297,14 @@ final class AppState: ObservableObject {
             for item in appMenu.items {
                 let t = item.title
                 let isSettings = t.hasPrefix("Settings") || t.hasPrefix("Preferences")
-                    || t.contains("设置") || t.contains("偏好")
+                    || t.contains("设置") || t.contains("偏好") || t.contains("Settings")
                 if isSettings, let action = item.action {
                     NSApp.sendAction(action, to: item.target, from: item)
                     return
                 }
             }
         }
-        lastMessage = "请从菜单栏「Dropline → 设置…」(⌘,) 打开设置"
+        lastMessage = "Open Settings from the menu bar: Dropline → Settings… (⌘,)".t
     }
 }
 

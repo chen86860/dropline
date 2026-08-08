@@ -2,7 +2,8 @@
 """从 CHANGELOG.md 抽取某个版本的条目。
 
     changelog.py 1.1.0            # 输出 Markdown（用作 GitHub Release 正文）
-    changelog.py 1.1.0 --html     # 输出 HTML（用作 Sparkle 更新弹窗说明）
+    changelog.py 1.1.0 --html     # 输出完整 HTML 文档
+    changelog.py 1.1.0 --fragment # 输出 HTML 片段（无 DOCTYPE/body，供 Sparkle 内嵌进 appcast）
 
 找不到该版本时以非零状态退出，好让发布脚本及时中止。
 """
@@ -39,7 +40,12 @@ def inline(md: str) -> str:
     return out
 
 
-def to_html(md: str) -> str:
+def to_fragment(md: str) -> str:
+    """Markdown → HTML 片段。
+
+    不带 DOCTYPE / body：generate_appcast 见到这样的片段会把它直接内嵌进
+    appcast 的 <description> CDATA 里，于是更新说明不再需要单独托管一个 HTML 文件。
+    """
     lines, parts, bullets = md.split("\n"), [], []
 
     def flush():
@@ -64,10 +70,15 @@ def to_html(md: str) -> str:
             parts.append(f"<p>{inline(line.strip())}</p>")
     flush()
 
+    return "\n".join(parts) + "\n"
+
+
+def to_html(md: str) -> str:
+    """Markdown → 完整 HTML 文档。"""
     return (
         '<!DOCTYPE html>\n<html lang="zh-CN">\n<head><meta charset="utf-8"></head>\n'
         '<body style="font: 13px -apple-system, BlinkMacSystemFont, sans-serif; color: #222;">\n'
-        + "\n".join(parts)
+        + to_fragment(md).rstrip("\n")
         + "\n</body>\n</html>\n"
     )
 
@@ -89,4 +100,9 @@ if __name__ == "__main__":
         print(latest())
     else:
         body = section(sys.argv[1])
-        print(to_html(body) if "--html" in sys.argv else body)
+        if "--fragment" in sys.argv:
+            print(to_fragment(body), end="")
+        elif "--html" in sys.argv:
+            print(to_html(body), end="")
+        else:
+            print(body)
