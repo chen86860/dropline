@@ -5,7 +5,9 @@
 #   ./Tools/sparkle.sh export-key        导出私钥，用于配置 GitHub Actions 的 secret
 #   ./Tools/sparkle.sh release 1.0.1     构建 → 打包 → 签名 → 生成 appcast → 发 GitHub Release
 #
-# 也可以在 GitHub 上手动触发 Release workflow 完成同样的事（见 .github/workflows/release.yml）。
+# 正常发版请改用推 tag：git tag v1.0.1 && git push origin v1.0.1
+# （见 .github/workflows/release.yml）。本脚本的 release 只作应急/离线用途 ——
+# 它建 tag 时会一并触发那个工作流，等于发两次。
 #
 # 私钥保存在登录钥匙串（由 Sparkle 的 generate_keys 创建），不在仓库里。
 set -euo pipefail
@@ -41,6 +43,12 @@ export-key)
 release)
   VERSION="${2:-}"
   [ -n "$VERSION" ] || { echo "用法: $0 release <版本号，如 1.0.1>"; exit 1; }
+
+  echo "⚠️  正常发版请推 tag（git tag v$VERSION && git push origin v$VERSION）由 CI 完成。"
+  echo "    本地发布会在远端建出同名 tag，从而再触发一次 Release 工作流。"
+  printf "    仍要在本机发布？[y/N] "
+  read -r answer
+  case "$answer" in [yY]*) ;; *) echo "已取消"; exit 1 ;; esac
 
   # 发布说明的唯一来源是 CHANGELOG.md；没写条目就直接中止，避免发出没有说明的版本
   echo "==> 读取 CHANGELOG.md"

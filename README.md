@@ -101,11 +101,24 @@ xattr -dr com.apple.quarantine /Applications/Dropline.app
 
 ## 发布新版本
 
-先在 [CHANGELOG.md](CHANGELOG.md) 顶部加一节 `## [1.0.1] - 日期`，然后二选一：
+先在 [CHANGELOG.md](CHANGELOG.md) 顶部加一节 `## [1.0.1] - 日期`，提交推送，然后**打 tag**：
 
-**在 GitHub 上发（推荐）**：Actions → Release → Run workflow，填版本号。
-CI 会完成构建、打 DMG、签名 appcast，并把 DMG、更新用 zip、增量包和 `appcast.xml` 一起
-发布为 Release 资产。仓库里不再保留 appcast 或更新说明文件。
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+推上去即触发 `Release` 工作流：版本号取自 tag（去掉开头的 `v`），完成构建、打 DMG、
+签名 appcast，并把 DMG、更新用 zip、增量包和 `appcast.xml` 一起发布为 Release 资产。
+仓库里不再保留 appcast 或更新说明文件。
+
+CHANGELOG 里没有该版本会直接失败。构建失败想重来就在 Actions 页面点 Re-run；
+改了代码则要删掉 tag 重新打：
+
+```bash
+git tag -d v1.0.1 && git push --delete origin v1.0.1
+```
+
 首次使用需要配置签名私钥：
 
 ```bash
@@ -114,11 +127,14 @@ gh secret set SPARKLE_PRIVATE_KEY < sparkle-private-key.txt     # 存为仓库 s
 rm sparkle-private-key.txt
 ```
 
-**在本机发**：
+**在本机发**（应急用，平时走上面的 tag 流程）：
 
 ```bash
 ./Tools/sparkle.sh release 1.0.1   # 构建 → 打包 → EdDSA 签名 → 生成 appcast → 发 Release
 ```
+
+> 它会在远端建出 `v1.0.1` 这个 tag，从而**同样触发** `Release` 工作流，等于发两次
+> （后跑完的那次会用 `--clobber` 覆盖资产）。两条路只挑一条走。
 
 CHANGELOG 是发布说明的唯一来源：脚本从中抽取对应版本的条目，转成 HTML 片段内嵌进
 appcast 供 Sparkle 更新弹窗显示，同时用 Markdown 原文作为 GitHub Release 正文。**没写条目会直接报错中止**，

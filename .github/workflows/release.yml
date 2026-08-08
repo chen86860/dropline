@@ -1,13 +1,13 @@
 name: Release
 
-# 手动触发：Actions → Release → Run workflow，填版本号（必须已写进 CHANGELOG.md）
+# 推 tag 即发版：
+#   git tag v1.3.0 && git push origin v1.3.0
+# 版本号取自 tag（去掉开头的 v），必须已经写进 CHANGELOG.md。
+# 构建失败要重来的话，在 Actions 页面点 Re-run；改了代码则删掉 tag 重新打。
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "版本号，如 1.2.0（需已存在于 CHANGELOG.md）"
-        required: true
-        type: string
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: write
@@ -17,13 +17,13 @@ jobs:
     name: 构建并发布
     runs-on: macos-latest
     env:
-      VERSION: ${{ inputs.version }}
       GH_TOKEN: ${{ github.token }}
 
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: main
+
+      - name: 解析版本号
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
       - name: 校验 CHANGELOG 里有该版本
         run: ./Tools/changelog.py "$VERSION" > /dev/null
@@ -121,16 +121,17 @@ jobs:
           while IFS= read -r d; do ASSETS+=("$d"); done \
             < <(ls dist/releases/*"$VERSION"-*.delta 2>/dev/null || true)
 
-          gh release create "v$VERSION" "${ASSETS[@]}" \
+          # tag 由本次推送带来，已存在于远端；Release 可能因重跑而已存在，故留兜底分支
+          gh release create "$GITHUB_REF_NAME" "${ASSETS[@]}" \
             --title "Dropline $VERSION" --notes-file notes.md \
-          || { gh release upload "v$VERSION" "${ASSETS[@]}" --clobber
-               gh release edit "v$VERSION" --notes-file notes.md; }
+          || { gh release upload "$GITHUB_REF_NAME" "${ASSETS[@]}" --clobber
+               gh release edit "$GITHUB_REF_NAME" --notes-file notes.md; }
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v7
         with:
-          name: Dropline-${{ inputs.version }}
+          name: Dropline-${{ env.VERSION }}
           path: |
-            dist/Dropline-${{ inputs.version }}.dmg
-            dist/releases/Dropline-${{ inputs.version }}.zip
+            dist/Dropline-${{ env.VERSION }}.dmg
+            dist/releases/Dropline-${{ env.VERSION }}.zip
             dist/appcast.xml
