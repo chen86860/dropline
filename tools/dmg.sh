@@ -1,8 +1,12 @@
 #!/bin/bash
-# 用 create-dmg 打一个带背景图的安装器：dist/Dropline-<版本>.dmg
+# 用 create-dmg 打一个带背景图的安装器：dist/Dropline.dmg
 #
 #   ./tools/dmg.sh              # 版本号取 CHANGELOG 最新条目
 #   ./tools/dmg.sh 1.2.0        # 指定版本号
+#
+# 文件名不带版本号，这样 Release 资产名每次都一样，
+# /releases/latest/download/Dropline.dmg 就永远指向最新一个正式版
+#（和 appcast.xml 用的是同一个套路）。版本号仍写在卷名和 App 的 Info.plist 里。
 #
 # 环境变量：
 #   DMG_SKIP_STYLE=1      跳过访达美化，直接出裸 DMG（调试用，快很多）
@@ -15,7 +19,7 @@ cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
 VERSION="${1:-$("$ROOT/tools/changelog.py" --latest)}"
 APP="$ROOT/dist/Dropline.app"
-DMG="$ROOT/dist/Dropline-$VERSION.dmg"
+DMG="$ROOT/dist/Dropline.dmg"
 
 command -v create-dmg >/dev/null || { echo "❌ 缺少 create-dmg，请先执行：brew install create-dmg"; exit 1; }
 
@@ -121,4 +125,5 @@ fi
 # 当成变量名的一部分，在 set -u 下直接报 unbound variable
 SIZE=$(du -h "$DMG" | cut -f1 | tr -d ' ')
 echo ""
-echo "✅ 完成：${DMG}（${SIZE}）"
+# 文件名不再带版本号，日志里把版本补出来，免得分不清这份是哪个版本
+echo "✅ 完成：${DMG}（${VERSION}，${SIZE}）"

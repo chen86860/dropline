@@ -13,7 +13,12 @@ export const LANGS: readonly Lang[] = ["en", "zh"];
 export const PATH_FOR: Record<Lang, string> = { en: "/", zh: "/zh" };
 
 export const REPO = "https://github.com/chen86860/dropline";
-export const RELEASES_LATEST = `${REPO}/releases/latest`;
+/**
+ * Direct download. The release asset carries no version number, so
+ * `/releases/latest/download/…` always resolves to the newest stable build —
+ * the button downloads the DMG instead of dropping people on the Releases page.
+ */
+export const DOWNLOAD_DMG = `${REPO}/releases/latest/download/Dropline.dmg`;
 
 export interface Content {
   htmlLang: string;

@@ -62,6 +62,8 @@ macOS 原生上传工具：拖拽、右键、菜单栏一键上传图片 / 视�
 ## 安装
 
 到 [Releases](https://github.com/chen86860/dropline/releases/latest) 下载，拖进「应用程序」即可。
+资产名不带版本号，所以这个直链永远指向最新正式版：
+[`Dropline.dmg`](https://github.com/chen86860/dropline/releases/latest/download/Dropline.dmg)。
 
 ad-hoc 签名，首次打开右键 App →「打开」，或：
 
@@ -95,7 +97,7 @@ xattr -dr com.apple.quarantine /Applications/Dropline.app
 ## 打包 DMG
 
 ```bash
-./tools/dmg.sh          # 版本号取 CHANGELOG 最新条目，产出 dist/Dropline-<版本>.dmg
+./tools/dmg.sh          # 版本号取 CHANGELOG 最新条目，产出 dist/Dropline.dmg
 ```
 
 带背景图、卷图标与「拖到应用程序」引导。依赖 `brew install create-dmg`。

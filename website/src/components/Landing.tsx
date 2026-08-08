@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 
 import { AppIcon, AppleIcon, ArrowIcon } from './icons';
-import { CONTENT, LANGS, PATH_FOR, RELEASES_LATEST, REPO, type Lang } from '../content';
+import { CONTENT, DOWNLOAD_DMG, LANGS, PATH_FOR, REPO, type Lang } from '../content';
 import { rememberLang, useTypeOnce } from '../lib/browser';
 
 const LANG_NAME: Record<Lang, string> = { en: 'EN', zh: '中文' };
@@ -78,7 +78,7 @@ export function Landing({ lang }: { lang: Lang }) {
               the hero CTA sits one screen-inch below. */}
           <a
             className="btn btn-primary min-h-10 shrink-0 px-3 text-sm sm:px-4"
-            href={RELEASES_LATEST}
+            href={DOWNLOAD_DMG}
             rel="noopener"
             aria-label={t.nav.download}
           >
@@ -101,7 +101,7 @@ export function Landing({ lang }: { lang: Lang }) {
             <p className="mt-6 max-w-[46ch] text-md text-muted">{t.hero.lede}</p>
 
             <div className="mt-10 flex flex-wrap gap-3">
-              <a className="btn btn-primary" href={RELEASES_LATEST} rel="noopener">
+              <a className="btn btn-primary" href={DOWNLOAD_DMG} rel="noopener">
                 <AppleIcon />
                 {t.hero.primary}
               </a>
@@ -275,7 +275,7 @@ export function Landing({ lang }: { lang: Lang }) {
             <p className={`${LEDE} mt-4`}>{t.install.lede}</p>
 
             <div className="mt-10 grid justify-items-start gap-3">
-              <a className="btn btn-primary" href={RELEASES_LATEST} rel="noopener">
+              <a className="btn btn-primary" href={DOWNLOAD_DMG} rel="noopener">
                 <AppleIcon />
                 {t.install.cta}
                 <ArrowIcon />

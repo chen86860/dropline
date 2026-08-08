@@ -1,4 +1,4 @@
-import { CONTENT, PATH_FOR, REPO, RELEASES_LATEST, type Lang } from '../content'
+import { CONTENT, DOWNLOAD_DMG, PATH_FOR, REPO, type Lang } from '../content'
 
 /**
  * The domain the site is served from. Drives canonical, hreflang, Open Graph
@@ -36,7 +36,7 @@ function structuredData(lang: Lang) {
         applicationCategory: 'UtilitiesApplication',
         operatingSystem: 'macOS 13.0 or later',
         processorRequirements: 'Apple Silicon',
-        downloadUrl: RELEASES_LATEST,
+        downloadUrl: DOWNLOAD_DMG,
         softwareHelp: REPO,
         image: `${SITE_URL}/icon-512.png`,
         inLanguage,

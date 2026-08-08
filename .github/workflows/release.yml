@@ -120,14 +120,17 @@ jobs:
             echo
             echo "---"
             echo
-            echo '下载 `Dropline-'"$VERSION"'.dmg`，拖进「应用程序」即可。'
+            echo '下载 `Dropline.dmg`，拖进「应用程序」即可。'
+            echo '直链（永远指向最新正式版）：'
+            echo '<https://github.com/'"${{ github.repository }}"'/releases/latest/download/Dropline.dmg>'
             echo 'ad-hoc 签名，首次打开请右键 App →「打开」，或执行：'
             echo '`xattr -dr com.apple.quarantine /Applications/Dropline.app`'
           } >> notes.md
 
-          # appcast.xml 作为资产上传：客户端的更新源固定指向
-          # /releases/latest/download/appcast.xml，永远解析到最新一个正式 Release
-          ASSETS=("dist/Dropline-$VERSION.dmg" "dist/releases/Dropline-$VERSION.zip" "dist/appcast.xml")
+          # DMG 与 appcast.xml 的资产名都不带版本号，这样
+          # /releases/latest/download/<名字> 永远解析到最新一个正式 Release。
+          # Sparkle 的 zip 必须保留版本号：generate_appcast 是从文件名认版本的。
+          ASSETS=("dist/Dropline.dmg" "dist/releases/Dropline-$VERSION.zip" "dist/appcast.xml")
           while IFS= read -r d; do ASSETS+=("$d"); done \
             < <(ls dist/releases/*"$VERSION"-*.delta 2>/dev/null || true)
 
@@ -142,6 +145,6 @@ jobs:
         with:
           name: Dropline-${{ env.VERSION }}
           path: |
-            dist/Dropline-${{ env.VERSION }}.dmg
+            dist/Dropline.dmg
             dist/releases/Dropline-${{ env.VERSION }}.zip
             dist/appcast.xml

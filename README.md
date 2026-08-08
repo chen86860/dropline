@@ -63,6 +63,8 @@ Template variables: `{{filename}} {{base}} {{ext}} {{uuid}} {{date}} {{datetime}
 ## Install
 
 Download from [Releases](https://github.com/chen86860/dropline/releases/latest) and drag it into Applications.
+The asset name carries no version number, so this link always points at the newest stable build:
+[`Dropline.dmg`](https://github.com/chen86860/dropline/releases/latest/download/Dropline.dmg).
 
 The build is ad-hoc signed, so on first launch right-click the app → Open, or run:
 
@@ -101,7 +103,7 @@ respectively, keyed by bundle ID, so deleting the `.app` does not take them alon
 ## Building the DMG
 
 ```bash
-./tools/dmg.sh          # version comes from the latest CHANGELOG entry, produces dist/Dropline-<version>.dmg
+./tools/dmg.sh          # version comes from the latest CHANGELOG entry, produces dist/Dropline.dmg
 ```
 
 Ships with a background image, a volume icon and a "drag to Applications" hint.
