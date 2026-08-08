@@ -92,6 +92,7 @@ export interface Content {
     steps: { title: string; body: string; code?: string }[];
     cta: string;
     ctaMeta: string;
+    brew: { label: string; command: string; note: string };
     note: string;
     source: string;
   };
@@ -300,6 +301,12 @@ const en: Content = {
     ],
     cta: "Download for macOS",
     ctaMeta: "Universal DMG · macOS 13+ · Apple Silicon",
+    brew: {
+      label: "Or install with Homebrew",
+      command: "brew install --cask chen86860/tap/dropline",
+      note:
+        "The cask tracks the latest release, so it needs no version number. Homebrew quarantines what it installs, so step 02 still applies on first launch.",
+    },
     note:
       "Updates arrive through Sparkle and are signed with EdDSA. Release notes ship in English and Chinese, and follow the language you pick in Settings.",
     source: "Prefer to build it yourself? Clone the repository and run ./build.sh --install.",
@@ -515,6 +522,12 @@ const zh: Content = {
     ],
     cta: "下载 macOS 版",
     ctaMeta: "DMG 安装包 · macOS 13+ · Apple Silicon",
+    brew: {
+      label: "也可以用 Homebrew 安装",
+      command: "brew install --cask chen86860/tap/dropline",
+      note:
+        "cask 跟随最新版本，所以不带版本号。Homebrew 会给装好的应用加隔离标记，第一次打开仍需执行第 02 步。",
+    },
     note:
       "更新通过 Sparkle 下发，用 EdDSA 签名。更新说明有中英两份，跟着你在设置里选的语言走。",
     source: "想自己编译？克隆仓库后执行 ./build.sh --install 就行。",

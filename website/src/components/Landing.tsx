@@ -281,6 +281,16 @@ export function Landing({ lang }: { lang: Lang }) {
                 <ArrowIcon />
               </a>
               <p className="mono-label">{t.install.ctaMeta}</p>
+
+              {/* Homebrew — the second path, deliberately quieter than the button */}
+              <div className="mt-6 grid w-full justify-items-start gap-2">
+                <p className="mono-label">{t.install.brew.label}</p>
+                <code className="break-anywhere block w-full rounded-sm border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
+                  {t.install.brew.command}
+                </code>
+                <p className="max-w-[60ch] text-sm text-muted">{t.install.brew.note}</p>
+              </div>
+
               <p className="mt-3 max-w-[60ch] text-sm text-muted">{t.install.note}</p>
               <p className="max-w-[60ch] text-sm text-muted">{t.install.source}</p>
             </div>
