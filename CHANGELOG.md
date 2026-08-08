@@ -1,74 +1,95 @@
-# 更新日志
+# Changelog
 
-本文件是发布说明的唯一来源：`./Tools/sparkle.sh release <版本>` 会从这里读取对应版本的
-条目，生成 Sparkle 更新弹窗里的说明，并作为 GitHub Release 的正文。
+**English** · [简体中文](CHANGELOG.zh-CN.md)
 
-发版前请先在最上方补一个 `## [版本号] - 日期` 小节，否则发布脚本会直接报错退出。
+This file is the single source of release notes: `Tools/changelog.py` extracts the section for
+a version, the release pipeline embeds it into the Sparkle appcast and uses it as the GitHub
+release body. [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md) holds the Chinese translation, and the
+update dialog shows whichever matches the language chosen in Settings.
+
+Before releasing, add a `## [version] - date` section at the top of **both** files — a missing
+section aborts the release, and a missing translation means no release notes in that language.
 
 ## [1.3.0] - 2026-08-08
 
-### 新增
+### Added
 
-- **中英双语**：默认跟随系统语言（识别到中文用中文，其余一律英文），也可在
-  设置 → 通用 → 语言里手动切换，切完立即生效、无需重启。访达右键菜单与「服务」
-  菜单项的文案一并跟随。
-- **菜单栏切换图床**：托盘菜单里直接选择当前使用的图床配置，不用打开设置。
+- **English and Chinese UI**: follows the system language by default (Chinese when the system
+  is Chinese, English otherwise), and can be switched by hand in Settings → General → Language.
+  Takes effect immediately, no restart needed. The Finder context menu and the Services item
+  follow along.
+- **Switch hosts from the menu bar**: pick the active host profile straight from the menu bar
+  item without opening Settings.
 
-### 变更
+### Changed
 
-- **全新图标**：App 图标与菜单栏图标改用统一的上传符号（箭头 + 底部横线）。
-  菜单栏图标去掉了外圈，上传时才收起底部横线、在外围显示进度环。
-- **设置面板重排**：「通用」移到第一位；访达右键菜单并入通用页，独立的「右键上传」
-  标签页移除，冗长的说明精简为两句；「关于」页去掉 Bundle ID、更新源等技术信息。
-- **后台上传不再打扰前台**：访达右键、服务菜单、拖到 Dock 触发的上传不会再唤起
-  主窗口，进度看菜单栏图标的进度环即可。
-- 菜单栏「最近上传」由 8 条改为 5 条。
-- **更新源改为 Release 资产**：`appcast.xml` 随每次发布上传，客户端固定读取
-  `releases/latest/download/appcast.xml`，仓库里不再回写 appcast 与更新说明文件；
-  更新说明改为内嵌在 appcast 中。
-- **`./build.sh --install` 重装更干净**：先退出正在运行的 App 与访达扩展，清理
-  LaunchServices 里所有旧的 Dropline.app 注册（含已推出 DMG 留下的失效注册），
-  再安装、重新启用访达扩展并启动。图床配置与钥匙串密钥不受影响。
+- **New icon**: the app icon and the menu bar icon now share one upload mark (arrow above a
+  baseline). The menu bar icon lost its surrounding circle; while uploading it hides the
+  baseline and draws a progress ring instead.
+- **Settings rearranged**: General moved first; the Finder context menu setting moved into it
+  and the separate "Right-click Upload" tab is gone, with its long help text cut down to two
+  sentences; About no longer lists the bundle ID, update feed and other internals.
+- **Background uploads no longer steal focus**: uploads started from the Finder context menu,
+  the Services menu or a drop on the Dock icon no longer bring up the main window — watch the
+  progress ring in the menu bar instead.
+- The menu bar now lists the 5 most recent uploads instead of 8.
+- **The update feed is a release asset**: `appcast.xml` is uploaded with every release and the
+  app reads `releases/latest/download/appcast.xml`. Neither the appcast nor the release notes
+  are written back into the repository, and release notes are embedded in the appcast itself.
+- **`./build.sh --install` reinstalls cleanly**: it quits the running app and its Finder
+  extension, clears every stale Dropline.app registration from LaunchServices (including dead
+  entries left behind by ejected DMGs), then installs, re-enables the Finder extension and
+  launches. Host profiles and keychain secrets are untouched.
 
-### 修复
+### Fixed
 
-- 设置页各下拉框因宽度不一而左右不对齐。
-- 切换语言后下拉框选项、标签页文案不刷新，标签栏图标与文案错位重复。
+- Pop-up buttons in Settings were misaligned because of inconsistent widths.
+- After switching languages, pop-up menu items and tab titles did not refresh, and the tab bar
+  showed duplicated labels and icons.
 
 ## [1.2.0] - 2026-08-07
 
-### 新增
+### Added
 
-- **访达右键菜单三档配置**：设置 → 右键上传里可选「显示（带图标）」「显示（纯文字）」
-  「不显示」，改完立即生效、无需重启访达。
-- **DMG 安装器**：`./Tools/dmg.sh` 生成带背景图与「拖到应用程序」引导的安装器。
-- **GitHub Actions**：`CI` 工作流在每次推送时编译并校验产物；`Release` 工作流可手动
-  触发，一次完成构建、打 DMG、签名 appcast、发 Release 并回写更新说明。
+- **Three modes for the Finder context menu**: Settings offers "show with icon", "show without
+  icon" and "don't show". Changes apply immediately, without restarting Finder.
+- **DMG installer**: `./Tools/dmg.sh` builds an installer with a background image and a
+  "drag to Applications" hint.
+- **GitHub Actions**: the `CI` workflow builds and validates the artifacts on every push; the
+  `Release` workflow can be triggered manually to build, pack the DMG, sign the appcast,
+  publish the release and write the notes back.
 
 ## [1.1.0] - 2026-08-07
 
-### 新增
+### Added
 
-- **访达右键扩展**：在 Finder 里选中文件，右键顶层即可「使用 Dropline 上传」，
-  并可在「系统设置 → 通用 → 登录项与扩展 → 访达扩展」中开关。
-- **系统通知**：上传成功或失败时发送通知，点通知即可复制链接（可在设置中关闭）。
-- **菜单栏进度环**：上传过程中托盘图标显示实时进度。
-- **关于面板**：设置里新增「关于」，展示版本、Bundle ID、更新源与项目主页。
+- **Finder extension**: select files in Finder and upload them straight from the top level of
+  the context menu. It can be toggled under System Settings → General → Login Items &
+  Extensions → Finder Extensions.
+- **System notifications** on success and failure; click the notification to copy the link
+  (can be turned off in Settings).
+- **Progress ring in the menu bar** while uploading.
+- **About panel** in Settings, showing the version, bundle ID, update feed and project page.
 
-### 修复
+### Fixed
 
-- 上传列表首行被分段控件遮挡。
-- 菜单栏图标在上传时宽度变化，导致右侧图标横向抖动。
-- 移除冗余的底部状态栏，清除与复制操作改到列表右键菜单。
+- The first row of the upload list was hidden behind the segmented control.
+- The menu bar icon changed width while uploading, making the icons to its right jitter.
+- Removed the redundant bottom status bar; clearing and copying moved to the list's context
+  menu.
 
 ## [1.0.0] - 2026-08-07
 
-### 新增
+### Added
 
-- 五种上传入口：拖到窗口、拖到 Dock 图标、系统文件面板、剪贴板、Finder 右键服务。
-- 三种上传引擎：`multipart/form-data`、二进制 `PUT`/`POST`、S3 兼容（自实现 AWS SigV4）。
-- 内置 Amazon S3、Cloudflare R2、阿里云 OSS、腾讯云 COS、MinIO、SM.MS、Imgur、
-  Lsky Pro / Chevereto、EasyImage 预设，并支持完全自定义图床。
-- 认证方式：Bearer Token、Basic、自定义请求头、URL 查询参数；密钥存系统钥匙串。
-- 上传完成自动复制链接，可切换 Markdown 格式；支持并发上传、进度与历史记录。
-- 内置 Sparkle 自动更新。
+- Five ways to upload: drop on the window, drop on the Dock icon, the system file panel, the
+  clipboard, and the Finder context menu service.
+- Three upload engines: `multipart/form-data`, binary `PUT`/`POST`, and S3-compatible
+  (AWS SigV4, implemented in-house).
+- Presets for Amazon S3, Cloudflare R2, Aliyun OSS, Tencent COS, MinIO, SM.MS, Imgur,
+  Lsky Pro / Chevereto and EasyImage, plus fully custom hosts.
+- Authentication via Bearer token, Basic, custom headers or URL query parameters; secrets are
+  stored in the system keychain.
+- The link is copied automatically when an upload finishes, optionally as Markdown; concurrent
+  uploads, progress and history are supported.
+- Built-in Sparkle auto-update.

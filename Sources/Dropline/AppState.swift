@@ -62,12 +62,28 @@ final class AppState: ObservableObject {
         didSet {
             UserDefaults.standard.set(language.rawValue, forKey: "language")
             L10n.language = language
+            syncPreferredLanguages()
             syncFinderExtension()
         }
     }
 
     private func syncFinderExtension() {
         FinderMenuMode.writeShared(mode: finderMenuMode, language: L10n.resolved)
+    }
+
+    /// Sparkle 的更新说明是 appcast 里若干条带 xml:lang 的 <description>，它用
+    /// NSBundle.preferredLocalizationsFromArray: 挑一条 —— 读的是 AppleLanguages。
+    /// 所以要把界面语言写进去，更新弹窗才会跟着 App 内的选择走，而不是只看系统语言。
+    ///
+    /// 注意：CFBundle 的语言列表在进程启动时就定下来了，写完**下次启动**才生效。
+    /// 也就是说刚切完语言就去查更新，那一次弹窗仍是上一个语言。
+    private func syncPreferredLanguages() {
+        let d = UserDefaults.standard
+        switch language {
+        case .system:  d.removeObject(forKey: "AppleLanguages")   // 交还给系统列表
+        case .english: d.set(["en"], forKey: "AppleLanguages")
+        case .chinese: d.set(["zh-Hans", "en"], forKey: "AppleLanguages")
+        }
     }
 
     /// 菜单栏进度：nil 表示空闲；否则是所有未完成任务的平均进度
@@ -121,6 +137,7 @@ final class AppState: ObservableObject {
         // 语言要在其它文案被读到之前先定下来
         language = (d.string(forKey: "language").flatMap(AppLanguage.init(rawValue:))) ?? .system
         L10n.language = language
+        syncPreferredLanguages()
         // 启动时同步一次：扩展容器可能刚被系统创建，或被用户清理过
         syncFinderExtension()
     }

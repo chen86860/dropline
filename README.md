@@ -4,10 +4,11 @@
 
 # Dropline
 
-**拖进去，链接就在剪贴板里。**
+**Drop it in, the link is on your clipboard.**
 
-macOS 原生上传工具：拖拽、右键、菜单栏一键上传图片 / 视频 / 任意文件，
-完成后自动复制可访问 URL。纯 Swift + SwiftUI，可执行文件仅 ~1 MB。
+A native macOS uploader: send images, videos or any file to your own host by drag & drop,
+right-click or the menu bar, and get the public URL copied automatically.
+Pure Swift + SwiftUI, ~1 MB executable.
 
 [![Release](https://img.shields.io/github/v/release/chen86860/dropline?color=2f6feb)](https://github.com/chen86860/dropline/releases/latest)
 [![Stars](https://img.shields.io/github/stars/chen86860/dropline?color=f5a623)](https://github.com/chen86860/dropline/stargazers)
@@ -15,168 +16,194 @@ macOS 原生上传工具：拖拽、右键、菜单栏一键上传图片 / 视�
 ![Platform](https://img.shields.io/badge/macOS-13%2B%20·%20Apple%20Silicon-black)
 [![License](https://img.shields.io/github/license/chen86860/dropline?color=8957e5)](LICENSE)
 
+**English** · [简体中文](README.zh-CN.md)
+
 </div>
 
 ---
 
-## 功能
+## Features
 
-- **五种上传入口**：拖到窗口 / 拖到 Dock 图标 / 系统文件面板 / 剪贴板（可直接传截图） / **Finder 右键顶层菜单**
-- **菜单栏常驻**：上传时图标变进度环，可快速上传并复制最近 8 条链接
-- **上传完成自动复制链接 + 系统通知**，可切换 Markdown `![name](url)` 格式
-- **任意文件类型**：大视频走临时文件流式上传，不占内存
-- 多图床配置随时切换、并发上传、实时进度、历史记录
-- 密钥存**系统钥匙串**，不写入配置文件
-- **中英双语**：跟随系统语言（非中文一律英文），也可在设置 → 通用里手动切换
-- 内置 [Sparkle](https://sparkle-project.org) 自动更新
+- **Five ways to upload**: drop on the window / drop on the Dock icon / system file panel / clipboard (screenshots work directly) / **top-level Finder context menu**
+- **Lives in the menu bar**: the icon turns into a progress ring while uploading, and offers quick upload plus the last 5 links
+- **Auto-copies the link when done + system notification**, optionally as Markdown `![name](url)`
+- **Any file type**: large videos stream from a temporary file instead of being held in memory
+- Switch between multiple host profiles, concurrent uploads, live progress, history
+- Secrets live in the **system keychain**, never in the config file
+- **English & Chinese**: follows the system language (anything other than Chinese falls back to English), or pick one in Settings → General
+- Built-in [Sparkle](https://sparkle-project.org) auto-update
 
-## 支持的图床
+## Supported hosts
 
-内置预设：Amazon S3、Cloudflare R2、阿里云 OSS、腾讯云 COS、MinIO、SM.MS、Imgur、Lsky Pro / Chevereto、EasyImage。
+Built-in presets: Amazon S3, Cloudflare R2, Aliyun OSS, Tencent COS, MinIO, SM.MS, Imgur, Lsky Pro / Chevereto, EasyImage.
 
-三种引擎覆盖几乎所有服务，也可以完全自定义：
+Three engines cover almost any service, and anything else can be configured by hand:
 
-| 引擎 | 适用 |
+| Engine | Use for |
 | --- | --- |
-| `multipart/form-data` | 绝大多数图床 API |
-| 二进制 `PUT` / `POST` | 自建服务、WebDAV 风格接口 |
-| S3 兼容（AWS SigV4） | S3 / R2 / OSS / COS / MinIO |
+| `multipart/form-data` | most image-host APIs |
+| Binary `PUT` / `POST` | self-hosted services, WebDAV-style endpoints |
+| S3-compatible (AWS SigV4) | S3 / R2 / OSS / COS / MinIO |
 
-**认证**：无 / Bearer Token / Basic / 自定义请求头 / URL 查询参数。
+**Authentication**: none / Bearer token / Basic / custom header / URL query parameter.
 
-### 配置自定义图床
+### Configuring a custom host
 
-设置 → 图床配置 → 新建：
+Settings → Hosts → new profile:
 
-- **上传地址** `https://your-domain.com/api/upload`
-- **响应解析** 填 JSON 路径，如 `data.url`、`files.0.url`；留空表示响应体本身就是 URL
-- **最终 URL 模板**（可选）`https://cdn.example.com/{{result}}`，用于接口只返回相对路径的情况
-- **对象 Key 模板** `images/{{date}}/{{uuid}}.{{ext}}`
+- **Upload URL** `https://your-domain.com/api/upload`
+- **JSON path** for parsing the response, e.g. `data.url`, `files.0.url`; leave empty if the body itself is the URL
+- **Final URL template** (optional) `https://cdn.example.com/{{result}}`, for APIs that only return a relative path
+- **Object key template** `images/{{date}}/{{uuid}}.{{ext}}`
 
-模板变量：`{{filename}} {{base}} {{ext}} {{uuid}} {{date}} {{datetime}} {{timestamp}} {{rand}} {{key}} {{result}}`
+Template variables: `{{filename}} {{base}} {{ext}} {{uuid}} {{date}} {{datetime}} {{timestamp}} {{rand}} {{key}} {{result}}`
 
-配置页底部的「测试上传」会传一张 8×8 测试图，直接显示返回的 URL 或错误原因。
+"Test Upload" at the bottom of the editor sends an 8×8 test image and shows the returned URL, or the error.
 
-## 安装
+## Install
 
-到 [Releases](https://github.com/chen86860/dropline/releases/latest) 下载，拖进「应用程序」即可。
+Download from [Releases](https://github.com/chen86860/dropline/releases/latest) and drag it into Applications.
 
-ad-hoc 签名，首次打开右键 App →「打开」，或：
+The build is ad-hoc signed, so on first launch right-click the app → Open, or run:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Dropline.app
 ```
 
-右键菜单项没出现时，到「系统设置 → 通用 → 登录项与扩展 → 访达扩展」打开 Dropline。
-（另外在「键盘 → 键盘快捷键 → 服务 → 文件与文件夹」里还有一个同名的服务项，可为它设快捷键。）
+If the context menu item does not show up, enable Dropline under
+System Settings → General → Login Items & Extensions → Finder Extensions.
+(There is also a Services item with the same name under Keyboard → Keyboard Shortcuts →
+Services → Files and Folders, which you can assign a shortcut to.)
 
-## 从源码构建
+## Building from source
 
-要求 macOS 13+、Xcode 命令行工具（Swift 5.9+）。
-
-```bash
-./build.sh --install     # 构建 + 装到 /Applications + 注册右键服务
-./build.sh               # 只构建到 dist/
-```
-
-`--install` 会先退出正在运行的 Dropline 与访达扩展、注销并删除 `/Applications` 里的旧版本，
-再把新版本装进去、重新注册服务菜单与访达扩展，最后启动它。**图床配置和密钥不受影响** ——
-它们分别存在 UserDefaults（`~/Library/Preferences/dev.emmmm.Dropline.plist`）和登录钥匙串里，
-按 Bundle ID 索引，删 `.app` 不会带走。
-
-> LaunchServices 里只能有一份 Dropline.app 注册——多份会让它在其间摇摆，右键服务菜单随之失效。
-> `--install` 每次都会把库里所有 Dropline.app 注册扫出来逐个注销再重新登记。最常见的多余注册
-> 来自装过的 DMG：卷推出后注册仍留在库里，路径早已不存在，这种「死」注册照样能用
-> `lsregister -u <原路径>` 销掉。其它位置真实存在的副本只注销、不替你删文件。
-> `--install` 用 `mv` 而非 `cp`，装完 `dist/` 里也不会有残留。
-
-## 打包 DMG
+Requires macOS 13+ and the Xcode command line tools (Swift 5.9+).
 
 ```bash
-./Tools/dmg.sh          # 版本号取 CHANGELOG 最新条目，产出 dist/Dropline-<版本>.dmg
+./build.sh --install     # build + install to /Applications + register the context menu
+./build.sh               # build into dist/ only
 ```
 
-带背景图、卷图标与「拖到应用程序」引导。依赖 `brew install create-dmg`。
+`--install` first quits the running Dropline and its Finder extension, unregisters and removes
+the old copy in `/Applications`, installs the new one, re-registers the Services menu and the
+Finder extension, and launches it. **Host profiles and secrets are untouched** — they live in
+UserDefaults (`~/Library/Preferences/dev.emmmm.Dropline.plist`) and the login keychain
+respectively, keyed by bundle ID, so deleting the `.app` does not take them along.
 
-窗口布局是 create-dmg 调访达的 AppleScript 写进卷里的 `.DS_Store`，偶尔会失败，
-脚本会重试三次；发布流程设了 `DMG_REQUIRE_STYLE=1`，布局没生效就直接报错，
-不会静默产出没有背景图的裸 DMG。调试时可用 `DMG_SKIP_STYLE=1` 跳过美化加快速度。
+> LaunchServices must hold exactly one Dropline.app registration — with several it flip-flops
+> between them and the context menu stops working. `--install` lists every registered
+> Dropline.app and unregisters them all before registering the new one. The most common
+> stray registration comes from a DMG you once mounted: the entry survives ejecting the volume
+> even though the path is long gone, and such a dead entry can still be removed with
+> `lsregister -u <original path>`. Real copies elsewhere on disk are only unregistered, never
+> deleted for you. `--install` uses `mv` rather than `cp`, so nothing is left behind in `dist/`.
 
-## 发布新版本
+## Building the DMG
 
-先在 [CHANGELOG.md](CHANGELOG.md) 顶部加一节 `## [1.0.1] - 日期`，提交推送，然后**打 tag**：
+```bash
+./Tools/dmg.sh          # version comes from the latest CHANGELOG entry, produces dist/Dropline-<version>.dmg
+```
+
+Ships with a background image, a volume icon and a "drag to Applications" hint.
+Requires `brew install create-dmg`.
+
+The window layout is a `.DS_Store` that create-dmg writes into the volume through Finder
+AppleScript. That occasionally fails, so the script retries three times; the release pipeline
+sets `DMG_REQUIRE_STYLE=1` so a missing layout fails the build instead of silently shipping a
+bare DMG without a background. Use `DMG_SKIP_STYLE=1` to skip the styling and build faster
+while debugging.
+
+## Releasing
+
+Add a `## [1.0.1] - date` section at the top of **both** [CHANGELOG.md](CHANGELOG.md) and
+[CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md), commit, push, then **tag it**:
 
 ```bash
 git tag v1.0.1
 git push origin v1.0.1
 ```
 
-推上去即触发 `Release` 工作流：版本号取自 tag（去掉开头的 `v`），完成构建、打 DMG、
-签名 appcast，并把 DMG、更新用 zip、增量包和 `appcast.xml` 一起发布为 Release 资产。
-仓库里不再保留 appcast 或更新说明文件。
+Pushing the tag triggers the `Release` workflow. The version comes from the tag (minus the
+leading `v`); the workflow builds the app, packs the DMG, signs the appcast, and publishes the
+DMG, the update zip, the delta packages and `appcast.xml` as release assets. Neither the
+appcast nor the release notes are kept in the repository any more.
 
-CHANGELOG 里没有该版本会直接失败。构建失败想重来就在 Actions 页面点 Re-run；
-改了代码则要删掉 tag 重新打：
+The build fails if the version is missing from CHANGELOG. To retry a failed build, hit Re-run
+on the Actions page; if you changed code, delete the tag and re-create it:
 
 ```bash
 git tag -d v1.0.1 && git push --delete origin v1.0.1
 ```
 
-首次使用需要配置签名私钥：
+The signing key has to be configured once:
 
 ```bash
-./Tools/sparkle.sh export-key                                   # 从钥匙串导出
-gh secret set SPARKLE_PRIVATE_KEY < sparkle-private-key.txt     # 存为仓库 secret
+./Tools/sparkle.sh export-key                                   # export from the keychain
+gh secret set SPARKLE_PRIVATE_KEY < sparkle-private-key.txt     # store as a repository secret
 rm sparkle-private-key.txt
 ```
 
-**在本机发**（应急用，平时走上面的 tag 流程）：
+**Releasing locally** (emergencies only — normally use the tag flow above):
 
 ```bash
-./Tools/sparkle.sh release 1.0.1   # 构建 → 打包 → EdDSA 签名 → 生成 appcast → 发 Release
+./Tools/sparkle.sh release 1.0.1   # build → pack → EdDSA sign → generate appcast → publish
 ```
 
-> 它会在远端建出 `v1.0.1` 这个 tag，从而**同样触发** `Release` 工作流，等于发两次
-> （后跑完的那次会用 `--clobber` 覆盖资产）。两条路只挑一条走。
+> This creates the `v1.0.1` tag on the remote, which **also** triggers the `Release` workflow —
+> effectively releasing twice (whichever finishes last overwrites the assets with `--clobber`).
+> Pick one path, not both.
 
-CHANGELOG 是发布说明的唯一来源：脚本从中抽取对应版本的条目，转成 HTML 片段内嵌进
-appcast 供 Sparkle 更新弹窗显示，同时用 Markdown 原文作为 GitHub Release 正文。**没写条目会直接报错中止**，
-不会发出没有说明的版本。
+CHANGELOG is the single source of release notes: the scripts extract the matching section,
+turn it into an HTML fragment embedded in the appcast for Sparkle's update dialog, and use the
+English Markdown as the GitHub release body. **A missing entry aborts the release**, so no
+version ever ships without notes.
 
-更新包用 EdDSA 签名，公钥在 Info.plist，私钥存登录钥匙串。
-正式分发时带上 Developer ID，脚本会自动启用 hardened runtime 与时间戳（公证所需）：
+Notes are shipped in both languages: each appcast item carries an `<description xml:lang="en">`
+and a `<description xml:lang="zh-Hans">`, and Sparkle picks one via
+`NSBundle.preferredLocalizations(from:)`. The app writes the language chosen in Settings into
+`AppleLanguages` so the update dialog follows it — that takes effect from the next launch,
+since CFBundle resolves the language list at process start. A version missing from the Chinese
+file only logs a warning; that release then has English notes only.
+
+Updates are signed with EdDSA; the public key sits in Info.plist and the private key in the
+login keychain. For public distribution pass a Developer ID and the script enables hardened
+runtime and timestamping automatically (both required for notarization):
 
 ```bash
 DROPLINE_SIGN_ID="Developer ID Application: NAME (TEAMID)" ./Tools/sparkle.sh release 1.0.1
 ```
 
-## 代码结构
+## Code layout
 
 ```
 Sources/Dropline/
-  DroplineApp.swift    入口、菜单栏托盘、Dock 拖放、AppDelegate
-  AppState.swift       配置、上传队列与并发调度、历史、剪贴板
-  Models.swift         配置模型与图床预设
-  UploadService.swift  multipart / 二进制 / S3 三种上传实现
-  S3Signer.swift       AWS Signature V4（流式 SHA256）
-  Templating.swift     {{变量}} 渲染 + JSON 路径取值
-  Updater.swift        Sparkle 封装
-  Notifier.swift       系统通知
-  TrayIcon.swift       菜单栏进度环图标
-  Keychain.swift       密钥存取
-  Localization.swift   中英文案表（源码写英文，中文查表，查不到兜底英文）
-  ContentView.swift    主窗口
-  SettingsView.swift   设置（通用 / 图床 / 关于）
+  DroplineApp.swift    entry point, menu bar item, Dock drop, AppDelegate
+  AppState.swift       settings, upload queue and concurrency, history, clipboard
+  Models.swift         configuration model and host presets
+  UploadService.swift  the three upload engines: multipart / binary / S3
+  S3Signer.swift       AWS Signature V4 (streaming SHA256)
+  Templating.swift     {{variable}} rendering + JSON path lookup
+  Updater.swift        Sparkle wrapper
+  Notifier.swift       system notifications
+  TrayIcon.swift       menu bar icon with progress ring
+  Keychain.swift       secret storage
+  Localization.swift   English/Chinese string table (source is English, Chinese via lookup,
+                       missing entries fall back to English)
+  ContentView.swift    main window
+  SettingsView.swift   settings (General / Hosts / About)
 
 Sources/DroplineFinder/
-  FinderSyncExtension.swift   Finder 右键扩展（沙盒，经 dropline:// 把选中文件交给主 App）
+  FinderSyncExtension.swift   Finder context menu extension (sandboxed, hands the selection
+                              to the main app over dropline://)
 
 Tools/
-  sparkle.sh       发布助手
-  changelog.py     从 CHANGELOG.md 抽取版本条目，输出 Markdown / HTML
-  makeicon.swift   生成 App 图标
+  sparkle.sh        release helper
+  changelog.py      extracts a version section from CHANGELOG.md / CHANGELOG.zh-CN.md
+                    as Markdown / HTML (--lang en|zh)
+  appcast_i18n.py   adds the Chinese <description xml:lang="zh-Hans"> to each appcast item
+  makeicon.swift    generates the app icon
 ```
 
-## 许可证
+## License
 
 [MIT](LICENSE)

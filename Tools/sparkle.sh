@@ -80,6 +80,10 @@ release)
     "$ROOT/Tools/changelog.py" "$v" --fragment > "$RELEASES/Dropline-$v.html" 2>/dev/null \
       || { echo "   ⚠️  CHANGELOG.md 里没有 $v，该版本不带更新说明"
            rm -f "$RELEASES/Dropline-$v.html"; }
+    # 中文那份带 .zh-Hans 后缀，generate_appcast 不会认它，稍后由 appcast_i18n.py 注入
+    "$ROOT/Tools/changelog.py" "$v" --lang zh --fragment > "$RELEASES/Dropline-$v.zh-Hans.html" 2>/dev/null \
+      || { echo "   ⚠️  CHANGELOG.zh-CN.md 里没有 $v，该版本没有中文更新说明"
+           rm -f "$RELEASES/Dropline-$v.zh-Hans.html"; }
   done
 
   echo "==> 生成并签名 appcast"
@@ -101,6 +105,9 @@ xml = re.sub(r'url="[^"]*/Dropline-([0-9][^"/]*)\.zip"', fix, xml)
 open(path, "w").write(xml)
 print("appcast 下载地址已按版本对齐 tag")
 PY
+
+  # 每个条目再补一份 xml:lang="zh-Hans" 的说明
+  "$ROOT/Tools/appcast_i18n.py" "$APPCAST" "$RELEASES"
 
   # generate_appcast 还会为历史版本生成增量包，appcast 里引用的是本次 tag 下的地址，
   # 必须一并上传，否则老版本用户下载增量包会 404

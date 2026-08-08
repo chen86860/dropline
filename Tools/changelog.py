@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""从 CHANGELOG.md 抽取某个版本的条目。
+"""从 CHANGELOG 抽取某个版本的条目。
 
-    changelog.py 1.1.0            # 输出 Markdown（用作 GitHub Release 正文）
-    changelog.py 1.1.0 --html     # 输出完整 HTML 文档
-    changelog.py 1.1.0 --fragment # 输出 HTML 片段（无 DOCTYPE/body，供 Sparkle 内嵌进 appcast）
+    changelog.py 1.1.0                  # 输出 Markdown（用作 GitHub Release 正文）
+    changelog.py 1.1.0 --html           # 输出完整 HTML 文档
+    changelog.py 1.1.0 --fragment       # 输出 HTML 片段（无 DOCTYPE/body，供 Sparkle 内嵌进 appcast）
+    changelog.py 1.1.0 --lang zh ...    # 改读中文版 CHANGELOG.zh-CN.md（默认 en）
+    changelog.py --latest               # 打印最新版本号
 
+英文的 CHANGELOG.md 是主文件，中文对照在 CHANGELOG.zh-CN.md。
 找不到该版本时以非零状态退出，好让发布脚本及时中止。
 """
 import html
@@ -13,21 +16,29 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CHANGELOG = ROOT / "CHANGELOG.md"
+FILES = {"en": ROOT / "CHANGELOG.md", "zh": ROOT / "CHANGELOG.zh-CN.md"}
 
 
-def section(version: str) -> str:
-    if not CHANGELOG.exists():
-        sys.exit(f"找不到 {CHANGELOG}")
-    text = CHANGELOG.read_text(encoding="utf-8")
+def changelog(lang: str = "en") -> Path:
+    path = FILES.get(lang)
+    if path is None:
+        sys.exit(f"未知语言 {lang}，可选：{', '.join(FILES)}")
+    return path
+
+
+def section(version: str, lang: str = "en") -> str:
+    path = changelog(lang)
+    if not path.exists():
+        sys.exit(f"找不到 {path}")
+    text = path.read_text(encoding="utf-8")
     # 匹配 "## [1.1.0] - 2026-08-07" 或 "## 1.1.0"，取到下一个 "## " 之前
     pattern = rf"^##\s+\[?{re.escape(version)}\]?[^\n]*\n(.*?)(?=^##\s|\Z)"
     m = re.search(pattern, text, re.MULTILINE | re.DOTALL)
     if not m:
-        sys.exit(f"CHANGELOG.md 里没有 {version} 的条目，请先补上再发版")
+        sys.exit(f"{path.name} 里没有 {version} 的条目，请先补上再发版")
     body = m.group(1).strip()
     if not body:
-        sys.exit(f"CHANGELOG.md 里 {version} 的条目是空的")
+        sys.exit(f"{path.name} 里 {version} 的条目是空的")
     return body
 
 
@@ -84,12 +95,13 @@ def to_html(md: str) -> str:
 
 
 def latest() -> str:
-    """CHANGELOG 里最上面那个版本号。"""
-    if not CHANGELOG.exists():
-        sys.exit(f"找不到 {CHANGELOG}")
-    m = re.search(r"^##\s+\[?(\d+\.\d+\.\d+)\]?", CHANGELOG.read_text(encoding="utf-8"), re.MULTILINE)
+    """CHANGELOG 里最上面那个版本号（以英文主文件为准）。"""
+    path = changelog("en")
+    if not path.exists():
+        sys.exit(f"找不到 {path}")
+    m = re.search(r"^##\s+\[?(\d+\.\d+\.\d+)\]?", path.read_text(encoding="utf-8"), re.MULTILINE)
     if not m:
-        sys.exit("CHANGELOG.md 里没有任何版本条目")
+        sys.exit(f"{path.name} 里没有任何版本条目")
     return m.group(1)
 
 
@@ -99,7 +111,13 @@ if __name__ == "__main__":
     if sys.argv[1] == "--latest":
         print(latest())
     else:
-        body = section(sys.argv[1])
+        lang = "en"
+        if "--lang" in sys.argv:
+            i = sys.argv.index("--lang")
+            if i + 1 >= len(sys.argv):
+                sys.exit("--lang 后面要跟语言代码，如 --lang zh")
+            lang = sys.argv[i + 1]
+        body = section(sys.argv[1], lang)
         if "--fragment" in sys.argv:
             print(to_fragment(body), end="")
         elif "--html" in sys.argv:

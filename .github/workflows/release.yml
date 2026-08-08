@@ -77,12 +77,17 @@ jobs:
         # 输出 HTML 片段（无 DOCTYPE/body），generate_appcast 会把它内嵌进 appcast 的
         # <description>，更新弹窗就不用再去外部拉 HTML 了。
         # appcast 每次都是从零重建，历史版本的说明也要一并备好，否则老条目会没有说明。
+        # 英文那份文件名要和安装包同名，generate_appcast 才会认；中文那份带 .zh-Hans
+        # 后缀避开它，之后由 Tools/appcast_i18n.py 注入。
         run: |
           for zip in dist/releases/Dropline-*.zip; do
             v=$(basename "$zip" .zip); v=${v#Dropline-}
             ./Tools/changelog.py "$v" --fragment > "dist/releases/Dropline-$v.html" \
               || { echo "::warning::CHANGELOG.md 里没有 $v，该版本不带更新说明"
                    rm -f "dist/releases/Dropline-$v.html"; }
+            ./Tools/changelog.py "$v" --lang zh --fragment > "dist/releases/Dropline-$v.zh-Hans.html" \
+              || { echo "::warning::CHANGELOG.zh-CN.md 里没有 $v，该版本没有中文更新说明"
+                   rm -f "dist/releases/Dropline-$v.zh-Hans.html"; }
           done
 
       - name: 生成并签名 appcast
@@ -104,6 +109,8 @@ jobs:
                        xml)
           open(path, "w").write(xml)
           PY
+          # 再给每个条目补一份 xml:lang="zh-Hans" 的说明，Sparkle 按用户语言挑
+          ./Tools/appcast_i18n.py dist/appcast.xml dist/releases
           cat dist/appcast.xml
 
       - name: 发布 GitHub Release
