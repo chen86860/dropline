@@ -10,6 +10,33 @@ update dialog shows whichever matches the language chosen in Settings.
 Before releasing, add a `## [version] - date` section at the top of **both** files — a missing
 section aborts the release, and a missing translation means no release notes in that language.
 
+## [1.4.0] - 2026-08-08
+
+### Added
+
+- **Dark mode**: Settings → General → Appearance switches between light and dark, or follows
+  the system (the default). Takes effect immediately, no restart needed, and only Dropline is
+  affected — the system appearance is left alone. The menu bar icon keeps following the menu
+  bar itself, as it should.
+
+### Changed
+
+- **The DMG no longer carries a version number in its filename**, so the release asset name is
+  stable and [`Dropline.dmg`](https://github.com/chen86860/dropline/releases/latest/download/Dropline.dmg)
+  always points at the newest stable build — the same trick already used for `appcast.xml`.
+  The version is still in the volume name and in the app itself. The Sparkle zip keeps its
+  version, because `generate_appcast` reads the version from the filename.
+
+### Fixed
+
+- **Uploading from the Finder context menu really does leave the main window alone now.** 1.3.0
+  tried to hide the window again after SwiftUI had already put it on screen, which raced and
+  could flash or fail outright. The main window is no longer part of the SwiftUI scene tree at
+  all: it is created on demand, so a background upload never brings one into existence. Normal
+  launches, the Dock icon and "Open Main Window" open it exactly as before.
+- A Finder upload whose files had been moved or deleted in the meantime could still pop the
+  main window open.
+
 ## [1.3.0] - 2026-08-08
 
 ### Added
