@@ -31,7 +31,8 @@ let titleAttrs: [NSAttributedString.Key: Any] = [
 let ts = title.size(withAttributes: titleAttrs)
 title.draw(at: NSPoint(x: (w - ts.width) / 2, y: h - 66), withAttributes: titleAttrs)
 
-let sub = "把 Dropline 拖到「应用程序」即可安装"
+// 安装器面向所有用户，统一用英文（和 App 内「兜底英文」的取向一致）
+let sub = "Drag Dropline to the Applications folder to install"
 let subAttrs: [NSAttributedString.Key: Any] = [
     .font: NSFont.systemFont(ofSize: 12, weight: .regular),
     .foregroundColor: NSColor(calibratedWhite: 0.42, alpha: 1),
