@@ -57,6 +57,13 @@ final class AppState: ObservableObject {
             syncFinderExtension()
         }
     }
+    /// 界面外观。改动后立刻作用于所有窗口，无需重启。
+    @Published var appearance: AppAppearance = .system {
+        didSet {
+            UserDefaults.standard.set(appearance.rawValue, forKey: "appearance")
+            appearance.apply()
+        }
+    }
     /// 界面语言。改动后要立刻同步给 L10n（界面靠 @Published 重绘）和访达扩展。
     @Published var language: AppLanguage = .system {
         didSet {
@@ -134,6 +141,8 @@ final class AppState: ObservableObject {
         notifyOnFinish = d.object(forKey: "notifyOnFinish") as? Bool ?? true
         finderMenuMode = (d.string(forKey: "finderMenuMode").flatMap(FinderMenuMode.init(rawValue:)))
             ?? .default
+        // 赋值必然触发 didSet，外观在这里就已经应用上了（首个窗口还没创建，不会闪）
+        appearance = (d.string(forKey: "appearance").flatMap(AppAppearance.init(rawValue:))) ?? .system
         // 语言要在其它文案被读到之前先定下来
         language = (d.string(forKey: "language").flatMap(AppLanguage.init(rawValue:))) ?? .system
         L10n.language = language

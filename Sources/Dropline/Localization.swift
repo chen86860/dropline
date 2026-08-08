@@ -97,6 +97,12 @@ enum L10n {
         "Send a system notification when an upload finishes": "上传完成后发送系统通知",
         "Hide the Dock icon (menu bar only)": "隐藏 Dock 图标（仅保留菜单栏图标）",
         "Concurrent uploads": "同时上传数量",
+        "Appearance": "外观",
+        "Color scheme": "配色",
+        "Light": "浅色",
+        "Dark": "深色",
+        "Applies to Dropline only, the system appearance is unchanged.":
+            "只影响 Dropline 自己，不改变系统外观。",
         "Language": "语言",
         "Interface language": "界面语言",
         "Follow System": "跟随系统",

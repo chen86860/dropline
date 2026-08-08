@@ -60,6 +60,17 @@ struct GeneralSettings: View {
             }
 
             Section {
+                Picker("Color scheme".t, selection: $state.appearance) {
+                    ForEach(AppAppearance.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text("Appearance".t)
+            } footer: {
+                Text("Applies to Dropline only, the system appearance is unchanged.".t)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
                 Picker("Interface language".t, selection: $state.language) {
                     ForEach(AppLanguage.allCases) { Text($0.label).tag($0) }
                 }
