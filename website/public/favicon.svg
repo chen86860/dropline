@@ -1,0 +1,17 @@
+<!-- The Dropline app icon. Geometry mirrors tools/makeicon.swift exactly:
+     rounded square inset 9%, corner radius 22%, Lucide arrow-up-from-line at
+     44% height with a 2-unit round stroke. Change one, change the other. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Dropline">
+  <defs>
+    <linearGradient id="dl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4D8CFF"/>
+      <stop offset="1" stop-color="#1C47D9"/>
+    </linearGradient>
+  </defs>
+  <rect x="92.16" y="92.16" width="839.68" height="839.68" rx="225.28" fill="url(#dl)"/>
+  <g fill="none" stroke="#fff" stroke-width="45.056" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M512 309.248V624.64"/>
+    <path d="M376.832 444.416 512 309.248l135.168 135.168"/>
+    <path d="M354.304 714.752h315.392"/>
+  </g>
+</svg>

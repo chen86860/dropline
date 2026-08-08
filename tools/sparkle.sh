@@ -1,9 +1,9 @@
 #!/bin/bash
 # Sparkle 发布助手
 #
-#   ./Tools/sparkle.sh pubkey            打印 EdDSA 公钥（应与 build.sh 里的 SU_PUBLIC_KEY 一致）
-#   ./Tools/sparkle.sh export-key        导出私钥，用于配置 GitHub Actions 的 secret
-#   ./Tools/sparkle.sh release 1.0.1     构建 → 打包 → 签名 → 生成 appcast → 发 GitHub Release
+#   ./tools/sparkle.sh pubkey            打印 EdDSA 公钥（应与 build.sh 里的 SU_PUBLIC_KEY 一致）
+#   ./tools/sparkle.sh export-key        导出私钥，用于配置 GitHub Actions 的 secret
+#   ./tools/sparkle.sh release 1.0.1     构建 → 打包 → 签名 → 生成 appcast → 发 GitHub Release
 #
 # 正常发版请改用推 tag：git tag v1.0.1 && git push origin v1.0.1
 # （见 .github/workflows/release.yml）。本脚本的 release 只作应急/离线用途 ——
@@ -52,7 +52,7 @@ release)
 
   # 发布说明的唯一来源是 CHANGELOG.md；没写条目就直接中止，避免发出没有说明的版本
   echo "==> 读取 CHANGELOG.md"
-  NOTES_MD=$("$ROOT/Tools/changelog.py" "$VERSION") || exit 1
+  NOTES_MD=$("$ROOT/tools/changelog.py" "$VERSION") || exit 1
   mkdir -p "$RELEASES"
   printf '%s\n' "$NOTES_MD" > "$RELEASES/notes-$VERSION.md"
 
@@ -77,11 +77,11 @@ release)
   for zip in "$RELEASES"/Dropline-*.zip; do
     [ -e "$zip" ] || continue
     v=$(basename "$zip" .zip); v=${v#Dropline-}
-    "$ROOT/Tools/changelog.py" "$v" --fragment > "$RELEASES/Dropline-$v.html" 2>/dev/null \
+    "$ROOT/tools/changelog.py" "$v" --fragment > "$RELEASES/Dropline-$v.html" 2>/dev/null \
       || { echo "   ⚠️  CHANGELOG.md 里没有 $v，该版本不带更新说明"
            rm -f "$RELEASES/Dropline-$v.html"; }
     # 中文那份带 .zh-Hans 后缀，generate_appcast 不会认它，稍后由 appcast_i18n.py 注入
-    "$ROOT/Tools/changelog.py" "$v" --lang zh --fragment > "$RELEASES/Dropline-$v.zh-Hans.html" 2>/dev/null \
+    "$ROOT/tools/changelog.py" "$v" --lang zh --fragment > "$RELEASES/Dropline-$v.zh-Hans.html" 2>/dev/null \
       || { echo "   ⚠️  CHANGELOG.zh-CN.md 里没有 $v，该版本没有中文更新说明"
            rm -f "$RELEASES/Dropline-$v.zh-Hans.html"; }
   done
@@ -107,7 +107,7 @@ print("appcast 下载地址已按版本对齐 tag")
 PY
 
   # 每个条目再补一份 xml:lang="zh-Hans" 的说明
-  "$ROOT/Tools/appcast_i18n.py" "$APPCAST" "$RELEASES"
+  "$ROOT/tools/appcast_i18n.py" "$APPCAST" "$RELEASES"
 
   # generate_appcast 还会为历史版本生成增量包，appcast 里引用的是本次 tag 下的地址，
   # 必须一并上传，否则老版本用户下载增量包会 404

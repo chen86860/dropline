@@ -1,4 +1,4 @@
-// 生成 DMG 背景图。由 Tools/dmg.sh 调用：makedmgbg.swift <输出路径> <缩放倍数>
+// 生成 DMG 背景图。由 tools/dmg.sh 调用：makedmgbg.swift <输出路径> <缩放倍数>
 import AppKit
 
 let out = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "dmg-bg.png"

@@ -43,7 +43,7 @@ enum TrayIcon {
     /// SVG 的 y 轴朝下，这里换算成 AppKit 的 y 轴朝上（y' = 24 - y）：
     ///     箭头 (6,15)→(12,21)→(18,15)   竖杆 (12,21)→(12,7)   底线 (5,3)→(19,3)
     /// 含描边后的包围盒：带底线 y∈[2,22]，不带底线 y∈[6,22]，中心随之不同。
-    /// 与 Tools/makeicon.swift 里的 App 图标共用这套几何，改一处要同步另一处。
+    /// 与 tools/makeicon.swift 里的 App 图标共用这套几何，改一处要同步另一处。
     private static func drawGlyph(height: CGFloat, baseline: Bool) {
         let unitH: CGFloat = baseline ? 20 : 16
         let unitCenterY: CGFloat = baseline ? 12 : 14

@@ -1,0 +1,124 @@
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4
+ * Design tokens — theme: Cobalt (modern-minimal genre)
+ * axes · paper band: cool light (L 98.5%) · display style: grotesk-sans · accent hue: electric cobalt (256°)
+ *
+ * Tailwind v4 `@theme`: every entry below is both a CSS custom property and a
+ * generated utility (`bg-paper`, `text-ink`, `font-display`, `duration-short`…).
+ * Nothing in the markup hard-codes a colour, a font or an easing — it all
+ * resolves through a name declared here. Portable: drop this file into another
+ * Tailwind v4 project and the whole system comes with it.
+ */
+
+@theme {
+  /* ── Type families — 2+1: display, body, outlier(mono) ─────────────── */
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* ── Type scale — perfect fourth, roman throughout ─────────────────── */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.45;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.6;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.6;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.6;
+  --text-md: 1.0625rem;
+  --text-md--line-height: 1.65;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 1.25;
+  --text-2xl: 1.875rem;
+  --text-2xl--line-height: 1.15;
+  --text-3xl: clamp(1.75rem, 1.2rem + 2.2vw, 2.5rem);
+  --text-3xl--line-height: 1.1;
+  --text-4xl: clamp(2rem, 1.3rem + 3vw, 3rem);
+  --text-4xl--line-height: 1.08;
+  --text-display: clamp(2.5rem, 1.4rem + 4.8vw, 4.5rem);
+  --text-display--line-height: 1.04;
+
+  --tracking-display: -0.03em;
+  --tracking-tight: -0.015em;
+  --tracking-mono: 0.06em;
+
+  /* ── Colour — cool engineered near-white, one cobalt signal ────────── */
+  --color-paper: oklch(98.5% 0.004 250);
+  --color-paper-2: oklch(96.6% 0.006 251);
+  --color-paper-3: oklch(94.2% 0.008 252);
+
+  --color-rule: oklch(90% 0.008 252);
+  --color-rule-2: oklch(82% 0.011 254);
+
+  --color-neutral: oklch(58% 0.015 256); /* hairlines + glyphs only, never body text */
+  --color-muted: oklch(46% 0.017 257);
+  --color-ink-2: oklch(34% 0.018 257);
+  --color-ink: oklch(24% 0.02 258);
+
+  /* The one dark band (Cobalt ships light with a single graphite beat) */
+  --color-graphite: oklch(22% 0.016 260);
+  --color-graphite-2: oklch(26.5% 0.016 260);
+  --color-graphite-rule: oklch(34% 0.014 260);
+  --color-graphite-ink: oklch(93% 0.008 255);
+  --color-graphite-muted: oklch(70% 0.012 256);
+
+  /* Accent — a signal, never a flood. Under 5% of any viewport. */
+  --color-accent: oklch(54% 0.196 256);
+  --color-accent-deep: oklch(48% 0.19 256); /* pressed / hovered accent surface */
+  --color-accent-soft: oklch(70% 0.16 256); /* the accent, legible on graphite */
+  --color-accent-ink: oklch(99% 0.004 256);
+  --color-accent-wash: oklch(54% 0.196 256 / 0.09);
+  --color-backdrop: oklch(24% 0.02 258 / 0.4);
+
+  /* Brand — the app icon's own colours, lifted from tools/makeicon.swift.
+     These belong to the mark, not to the page: the icon is the only place on
+     the site allowed to carry a gradient. */
+  --color-brand-from: oklch(70.5% 0.163 262);
+  --color-brand-to: oklch(46.5% 0.213 265);
+  --color-brand-glyph: oklch(100% 0 0);
+
+  /* ── Space — 4pt scale, named by role ──────────────────────────────── */
+  --spacing: 0.25rem;
+
+  /* ── Structure ─────────────────────────────────────────────────────── */
+  --radius-sm: 6px; /* buttons, inputs — drawn with a ruler, never a pill */
+  --radius-md: 10px; /* readout + template cards */
+
+  --shadow-whisper: 0 1px 2px oklch(24% 0.02 258 / 0.05);
+  --shadow-lift: 0 18px 48px -28px oklch(24% 0.02 258 / 0.45);
+
+  /* ── Motion — three named easings, three buckets ───────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-micro: 120ms;
+  --duration-short: 220ms;
+  --duration-long: 420ms;
+
+  /* ── Depth — named levels, no freestyle numbers ────────────────────── */
+  --z-index-raised: 10;
+  --z-index-sticky: 200;
+  --z-index-nav: 201;
+  --z-index-modal: 400;
+
+  /* ── Content measures ──────────────────────────────────────────────── */
+  --container-page: 74rem;
+
+  /* Content-driven breakpoints (rem, so they respect the user's font size) */
+  --breakpoint-sm: 30rem;
+  --breakpoint-md: 40rem;
+  --breakpoint-lg: 48rem;
+  --breakpoint-xl: 60rem;
+}
+
+:root {
+  /* Height of the sticky nav — scroll anchoring docks beneath it */
+  --banner-height: 60px;
+}
+
+@media (width >= 60rem) {
+  :root {
+    --banner-height: 68px;
+  }
+}

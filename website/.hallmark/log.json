@@ -1,0 +1,13 @@
+[
+  {
+    "date": "2026-08-08",
+    "macrostructure": "Split Studio",
+    "theme": "Cobalt",
+    "theme_axes": "cool-light / grotesk-sans / electric-cobalt",
+    "genre": "modern-minimal",
+    "nav": "N1b SaaS three-section",
+    "footer": "Ft1 Mast-headed",
+    "enrichment": "none (typography only + Tier-A CSS readout)",
+    "brief": "Dropline · native macOS uploader landing page, bilingual EN/ZH, TanStack Start on Cloudflare Workers"
+  }
+]

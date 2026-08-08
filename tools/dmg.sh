@@ -1,8 +1,8 @@
 #!/bin/bash
 # 用 create-dmg 打一个带背景图的安装器：dist/Dropline-<版本>.dmg
 #
-#   ./Tools/dmg.sh              # 版本号取 CHANGELOG 最新条目
-#   ./Tools/dmg.sh 1.2.0        # 指定版本号
+#   ./tools/dmg.sh              # 版本号取 CHANGELOG 最新条目
+#   ./tools/dmg.sh 1.2.0        # 指定版本号
 #
 # 环境变量：
 #   DMG_SKIP_STYLE=1      跳过访达美化，直接出裸 DMG（调试用，快很多）
@@ -13,7 +13,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
-VERSION="${1:-$("$ROOT/Tools/changelog.py" --latest)}"
+VERSION="${1:-$("$ROOT/tools/changelog.py" --latest)}"
 APP="$ROOT/dist/Dropline.app"
 DMG="$ROOT/dist/Dropline-$VERSION.dmg"
 
@@ -28,8 +28,8 @@ fi
 echo "==> 生成背景图"
 BG_DIR="$ROOT/dist/dmg-bg"
 rm -rf "$BG_DIR"; mkdir -p "$BG_DIR"
-swift "$ROOT/Tools/makedmgbg.swift" "$BG_DIR/bg.png" 1
-swift "$ROOT/Tools/makedmgbg.swift" "$BG_DIR/bg@2x.png" 2
+swift "$ROOT/tools/makedmgbg.swift" "$BG_DIR/bg.png" 1
+swift "$ROOT/tools/makedmgbg.swift" "$BG_DIR/bg@2x.png" 2
 # 合成带 HiDPI 的 tiff，Retina 屏上才不会糊
 tiffutil -cathidpicheck "$BG_DIR/bg.png" "$BG_DIR/bg@2x.png" -out "$BG_DIR/bg.tiff"
 

@@ -101,7 +101,7 @@ respectively, keyed by bundle ID, so deleting the `.app` does not take them alon
 ## Building the DMG
 
 ```bash
-./Tools/dmg.sh          # version comes from the latest CHANGELOG entry, produces dist/Dropline-<version>.dmg
+./tools/dmg.sh          # version comes from the latest CHANGELOG entry, produces dist/Dropline-<version>.dmg
 ```
 
 Ships with a background image, a volume icon and a "drag to Applications" hint.
@@ -138,7 +138,7 @@ git tag -d v1.0.1 && git push --delete origin v1.0.1
 The signing key has to be configured once:
 
 ```bash
-./Tools/sparkle.sh export-key                                   # export from the keychain
+./tools/sparkle.sh export-key                                   # export from the keychain
 gh secret set SPARKLE_PRIVATE_KEY < sparkle-private-key.txt     # store as a repository secret
 rm sparkle-private-key.txt
 ```
@@ -146,7 +146,7 @@ rm sparkle-private-key.txt
 **Releasing locally** (emergencies only — normally use the tag flow above):
 
 ```bash
-./Tools/sparkle.sh release 1.0.1   # build → pack → EdDSA sign → generate appcast → publish
+./tools/sparkle.sh release 1.0.1   # build → pack → EdDSA sign → generate appcast → publish
 ```
 
 > This creates the `v1.0.1` tag on the remote, which **also** triggers the `Release` workflow —
@@ -170,7 +170,7 @@ login keychain. For public distribution pass a Developer ID and the script enabl
 runtime and timestamping automatically (both required for notarization):
 
 ```bash
-DROPLINE_SIGN_ID="Developer ID Application: NAME (TEAMID)" ./Tools/sparkle.sh release 1.0.1
+DROPLINE_SIGN_ID="Developer ID Application: NAME (TEAMID)" ./tools/sparkle.sh release 1.0.1
 ```
 
 ## Code layout
@@ -196,7 +196,7 @@ Sources/DroplineFinder/
   FinderSyncExtension.swift   Finder context menu extension (sandboxed, hands the selection
                               to the main app over dropline://)
 
-Tools/
+tools/
   sparkle.sh        release helper
   changelog.py      extracts a version section from CHANGELOG.md / CHANGELOG.zh-CN.md
                     as Markdown / HTML (--lang en|zh)

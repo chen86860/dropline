@@ -26,7 +26,7 @@ jobs:
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
       - name: 校验 CHANGELOG 里有该版本
-        run: ./Tools/changelog.py "$VERSION" > /dev/null
+        run: ./tools/changelog.py "$VERSION" > /dev/null
 
       - name: 校验签名私钥已配置
         env:
@@ -34,7 +34,7 @@ jobs:
         run: |
           if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
             echo "::error::缺少 SPARKLE_PRIVATE_KEY secret，Sparkle 更新包无法签名"
-            echo "::error::用 ./Tools/sparkle.sh export-key 导出后添加到仓库 Secrets"
+            echo "::error::用 ./tools/sparkle.sh export-key 导出后添加到仓库 Secrets"
             exit 1
           fi
 
@@ -57,7 +57,7 @@ jobs:
           # 之前写死了跳过美化的开关，反而让 CI 一直产出没有背景图的裸 DMG。
           # 要求布局必须生效：写不进 .DS_Store 就让这一步失败，而不是悄悄降级。
           DMG_REQUIRE_STYLE: "1"
-        run: ./Tools/dmg.sh "$VERSION"
+        run: ./tools/dmg.sh "$VERSION"
 
       - name: 拉取历史版本安装包
         # generate_appcast 只会为目录里存在的包生成条目；不先取回历史版本，
@@ -78,14 +78,14 @@ jobs:
         # <description>，更新弹窗就不用再去外部拉 HTML 了。
         # appcast 每次都是从零重建，历史版本的说明也要一并备好，否则老条目会没有说明。
         # 英文那份文件名要和安装包同名，generate_appcast 才会认；中文那份带 .zh-Hans
-        # 后缀避开它，之后由 Tools/appcast_i18n.py 注入。
+        # 后缀避开它，之后由 tools/appcast_i18n.py 注入。
         run: |
           for zip in dist/releases/Dropline-*.zip; do
             v=$(basename "$zip" .zip); v=${v#Dropline-}
-            ./Tools/changelog.py "$v" --fragment > "dist/releases/Dropline-$v.html" \
+            ./tools/changelog.py "$v" --fragment > "dist/releases/Dropline-$v.html" \
               || { echo "::warning::CHANGELOG.md 里没有 $v，该版本不带更新说明"
                    rm -f "dist/releases/Dropline-$v.html"; }
-            ./Tools/changelog.py "$v" --lang zh --fragment > "dist/releases/Dropline-$v.zh-Hans.html" \
+            ./tools/changelog.py "$v" --lang zh --fragment > "dist/releases/Dropline-$v.zh-Hans.html" \
               || { echo "::warning::CHANGELOG.zh-CN.md 里没有 $v，该版本没有中文更新说明"
                    rm -f "dist/releases/Dropline-$v.zh-Hans.html"; }
           done
@@ -110,12 +110,12 @@ jobs:
           open(path, "w").write(xml)
           PY
           # 再给每个条目补一份 xml:lang="zh-Hans" 的说明，Sparkle 按用户语言挑
-          ./Tools/appcast_i18n.py dist/appcast.xml dist/releases
+          ./tools/appcast_i18n.py dist/appcast.xml dist/releases
           cat dist/appcast.xml
 
       - name: 发布 GitHub Release
         run: |
-          ./Tools/changelog.py "$VERSION" > notes.md
+          ./tools/changelog.py "$VERSION" > notes.md
           {
             echo
             echo "---"

@@ -1,0 +1,175 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Split Studio · theme: Cobalt
+ * enrichment: none (typography only + Tier-A CSS readout) · nav: N13 inline ⌘K pill · footer: Ft1 mast-headed
+ * tone: technical · audience: macOS users who host their own files · anchor hue: 256 (electric cobalt)
+ * axes · paper: cool light · display: grotesk-sans · accent: electric cobalt
+ * pre-emit critique: P5 H5 E5 S5 R5 V4
+ *
+ * Tailwind v4. The design system lives in ./tokens.css as an `@theme` block;
+ * everything below is either a base rule Tailwind has no utility for, or a
+ * component class for a pattern repeated verbatim in several places.
+ */
+
+@import "tailwindcss";
+@import "./tokens.css";
+
+@layer base {
+  html,
+  body {
+    /* clip, never hidden — hidden would break the sticky nav */
+    overflow-x: clip;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-block-start: calc(var(--banner-height) + --spacing(6));
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink-2);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    /* display type is always roman — an italicised header is the tell */
+    font-style: normal;
+    color: var(--color-ink);
+    letter-spacing: var(--tracking-display);
+    /* long URLs, template variables and CJK all wrap inside the word */
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+
+  :focus-visible {
+    /* never animated — the ring must appear the instant focus lands */
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background: var(--color-accent-wash);
+    color: var(--color-ink);
+  }
+}
+
+@layer components {
+  /* Buttons — 6px radius, never a pill. Labels never wrap to two lines. */
+  .btn {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2
+      rounded-sm border border-transparent px-6 text-base font-medium
+      whitespace-nowrap transition-colors duration-micro ease-out;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn-primary {
+    @apply bg-accent text-accent-ink;
+  }
+
+  .btn-secondary {
+    @apply border-rule-2 bg-paper text-ink;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover {
+      @apply bg-accent-deep;
+    }
+
+    .btn-secondary:hover {
+      @apply border-accent text-accent;
+    }
+  }
+
+  /* Machine-readout voice: mono labels for meta and status. Not a section
+     eyebrow — these tag machine-readable values, never headings.
+     Deliberately NOT uppercased: this page has to spell "macOS" correctly. */
+  /* FAQ disclosure. A plus that becomes a minus — the whole indicator is two
+     rules, so there is no icon to fall out of step with the rest of the set. */
+  .faq > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__mark {
+    @apply relative size-3 shrink-0;
+  }
+
+  .faq__mark::before,
+  .faq__mark::after {
+    @apply absolute inset-x-0 top-1/2 h-px bg-current transition-transform duration-short ease-out;
+    content: "";
+  }
+
+  .faq__mark::after {
+    transform: rotate(90deg);
+  }
+
+  .faq[open] .faq__mark::after {
+    transform: rotate(0deg);
+  }
+
+  .mono-label {
+    /* --color-muted, not --color-neutral: at 11px this is body-grade text and
+       has to clear 4.5:1. `neutral` is reserved for hairlines and glyphs. */
+    @apply font-mono text-2xs font-medium tracking-mono text-muted;
+  }
+}
+
+/* Tailwind v4 has no `--duration-*` or `--z-index-*` theme namespace, so the
+   three motion buckets and the two stacking levels the page uses are exposed
+   as named utilities. Nothing in the markup writes a raw ms value or z number. */
+@utility duration-micro {
+  transition-duration: var(--duration-micro);
+}
+
+@utility duration-short {
+  transition-duration: var(--duration-short);
+}
+
+@utility duration-long {
+  transition-duration: var(--duration-long);
+}
+
+@utility z-nav {
+  z-index: var(--z-index-nav);
+}
+
+/* Tabular figures for the spec sheet. */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Long URLs, object keys and template variables wrap inside the word rather
+   than pushing a grid track past the viewport (mobile gates 50 + 51). */
+@utility break-anywhere {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .btn:active {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 150ms !important;
+    transition-duration: 150ms !important;
+  }
+}

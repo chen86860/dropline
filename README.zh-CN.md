@@ -95,7 +95,7 @@ xattr -dr com.apple.quarantine /Applications/Dropline.app
 ## 打包 DMG
 
 ```bash
-./Tools/dmg.sh          # 版本号取 CHANGELOG 最新条目，产出 dist/Dropline-<版本>.dmg
+./tools/dmg.sh          # 版本号取 CHANGELOG 最新条目，产出 dist/Dropline-<版本>.dmg
 ```
 
 带背景图、卷图标与「拖到应用程序」引导。依赖 `brew install create-dmg`。
@@ -128,7 +128,7 @@ git tag -d v1.0.1 && git push --delete origin v1.0.1
 首次使用需要配置签名私钥：
 
 ```bash
-./Tools/sparkle.sh export-key                                   # 从钥匙串导出
+./tools/sparkle.sh export-key                                   # 从钥匙串导出
 gh secret set SPARKLE_PRIVATE_KEY < sparkle-private-key.txt     # 存为仓库 secret
 rm sparkle-private-key.txt
 ```
@@ -136,7 +136,7 @@ rm sparkle-private-key.txt
 **在本机发**（应急用，平时走上面的 tag 流程）：
 
 ```bash
-./Tools/sparkle.sh release 1.0.1   # 构建 → 打包 → EdDSA 签名 → 生成 appcast → 发 Release
+./tools/sparkle.sh release 1.0.1   # 构建 → 打包 → EdDSA 签名 → 生成 appcast → 发 Release
 ```
 
 > 它会在远端建出 `v1.0.1` 这个 tag，从而**同样触发** `Release` 工作流，等于发两次
@@ -155,7 +155,7 @@ App 会把设置里选的语言写进 `AppleLanguages`，更新弹窗因此跟�
 正式分发时带上 Developer ID，脚本会自动启用 hardened runtime 与时间戳（公证所需）：
 
 ```bash
-DROPLINE_SIGN_ID="Developer ID Application: NAME (TEAMID)" ./Tools/sparkle.sh release 1.0.1
+DROPLINE_SIGN_ID="Developer ID Application: NAME (TEAMID)" ./tools/sparkle.sh release 1.0.1
 ```
 
 ## 代码结构
@@ -179,7 +179,7 @@ Sources/Dropline/
 Sources/DroplineFinder/
   FinderSyncExtension.swift   Finder 右键扩展（沙盒，经 dropline:// 把选中文件交给主 App）
 
-Tools/
+tools/
   sparkle.sh        发布助手
   changelog.py      从 CHANGELOG.md / CHANGELOG.zh-CN.md 抽取版本条目，
                     输出 Markdown / HTML（--lang en|zh）

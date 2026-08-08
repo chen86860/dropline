@@ -7,12 +7,12 @@ ROOT="$(pwd)"
 APP="$ROOT/dist/Dropline.app"
 BUNDLE_ID="dev.emmmm.Dropline"
 # 版本号默认取 CHANGELOG.md 里最新的一条，避免和发布内容脱节
-VERSION="${DROPLINE_VERSION:-$("$ROOT/Tools/changelog.py" --latest)}"
+VERSION="${DROPLINE_VERSION:-$("$ROOT/tools/changelog.py" --latest)}"
 
 # Sparkle 自动更新：appcast.xml 作为 Release 资产随每次发布上传，
 # /releases/latest/download/ 永远指向最新一个正式 Release，无需回写仓库
 FEED_URL="https://github.com/chen86860/dropline/releases/latest/download/appcast.xml"
-# 与钥匙串里的 EdDSA 私钥配对；用 Tools/sparkle.sh pubkey 可重新打印
+# 与钥匙串里的 EdDSA 私钥配对；用 tools/sparkle.sh pubkey 可重新打印
 SU_PUBLIC_KEY="F7NNg2b/Lpgv6EprFu5YcR6DApLrwc5yfPOmI7o5hOk="
 
 echo "==> 编译 (release, arm64)"
@@ -76,7 +76,7 @@ cp -R "$SPARKLE_FW" "$APP/Contents/Frameworks/"
 echo "==> 生成图标"
 ICONSET="$ROOT/dist/Dropline.iconset"
 rm -rf "$ICONSET"; mkdir -p "$ICONSET"
-swift "$ROOT/Tools/makeicon.swift" "$ROOT/dist/icon-1024.png"
+swift "$ROOT/tools/makeicon.swift" "$ROOT/dist/icon-1024.png"
 for s in 16 32 64 128 256 512 1024; do
   sips -z $s $s "$ROOT/dist/icon-1024.png" --out "$ICONSET/icon_${s}x${s}.png" >/dev/null
 done
@@ -187,7 +187,7 @@ for nested in \
 done
 codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$FW"
 codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" \
-  --entitlements "$ROOT/Resources/DroplineFinder.entitlements" --sign "$SIGN_ID" "$EXT"
+  --entitlements "$ROOT/resources/DroplineFinder.entitlements" --sign "$SIGN_ID" "$EXT"
 codesign --force "${SIGN_OPTS[@]+"${SIGN_OPTS[@]}"}" --sign "$SIGN_ID" "$APP"
 
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister

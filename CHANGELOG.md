@@ -2,7 +2,7 @@
 
 **English** · [简体中文](CHANGELOG.zh-CN.md)
 
-This file is the single source of release notes: `Tools/changelog.py` extracts the section for
+This file is the single source of release notes: `tools/changelog.py` extracts the section for
 a version, the release pipeline embeds it into the Sparkle appcast and uses it as the GitHub
 release body. [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md) holds the Chinese translation, and the
 update dialog shows whichever matches the language chosen in Settings.
@@ -53,7 +53,7 @@ section aborts the release, and a missing translation means no release notes in 
 
 - **Three modes for the Finder context menu**: Settings offers "show with icon", "show without
   icon" and "don't show". Changes apply immediately, without restarting Finder.
-- **DMG installer**: `./Tools/dmg.sh` builds an installer with a background image and a
+- **DMG installer**: `./tools/dmg.sh` builds an installer with a background image and a
   "drag to Applications" hint.
 - **GitHub Actions**: the `CI` workflow builds and validates the artifacts on every push; the
   `Release` workflow can be triggered manually to build, pack the DMG, sign the appcast,

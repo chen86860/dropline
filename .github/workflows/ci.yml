@@ -39,4 +39,4 @@ jobs:
           echo "版本 $(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"
 
       - name: 校验 CHANGELOG 能被解析
-        run: ./Tools/changelog.py --latest
+        run: ./tools/changelog.py --latest
