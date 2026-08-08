@@ -4,6 +4,10 @@
 #   ./Tools/dmg.sh              # 版本号取 CHANGELOG 最新条目
 #   ./Tools/dmg.sh 1.2.0        # 指定版本号
 #
+# 环境变量：
+#   DMG_SKIP_STYLE=1      跳过访达美化，直接出裸 DMG（调试用，快很多）
+#   DMG_REQUIRE_STYLE=1   美化没生效就直接失败，不允许静默降级（发布流程用）
+#
 # 依赖：brew install create-dmg
 set -euo pipefail
 
@@ -48,17 +52,57 @@ make_dmg() {
     "$DMG" "$APP"
 }
 
-# create-dmg 会用 AppleScript 让访达把窗口摆好看，这一步在无 GUI 环境（CI）里会失败；
-# 失败后用 --skip-jenkins 重来一次，只是窗口布局不生效，DMG 本身照常可用。
-if [ "${DMG_SKIP_JENKINS:-0}" = "1" ]; then
+# CI 日志里也要显眼
+warn() {
+  echo "⚠️  $1"
+  [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning::$1" || true
+}
+
+# 背景图、图标位置、窗口大小全靠 create-dmg 调访达的 AppleScript 写进卷里。
+# 关掉这一步的开关在 create-dmg 那边叫 --skip-jenkins —— 纯属上游的历史命名，
+# 当年是给 Jenkins 那种没有图形会话的 CI 用的，和本仓库无关，这里只按它的原名传参。
+# 这段偶尔会撞上 "Can't get disk (-1728)"，重试一般就过；真的做不到才降级。
+STYLED=0
+if [ "${DMG_SKIP_STYLE:-0}" = "1" ]; then
   make_dmg --skip-jenkins
-elif ! make_dmg; then
-  echo "⚠️  访达美化步骤失败（多半是无 GUI 环境），改用 --skip-jenkins 重试"
-  rm -f "$DMG"
-  make_dmg --skip-jenkins
+else
+  for attempt in 1 2 3; do
+    rm -f "$DMG"
+    if make_dmg; then STYLED=1; break; fi
+    warn "访达美化第 $attempt 次失败，5 秒后重试"
+    sleep 5
+  done
+  if [ "$STYLED" = "0" ]; then
+    warn "访达美化最终失败，只能出裸 DMG：没有背景图与图标位置"
+    rm -f "$DMG"
+    make_dmg --skip-jenkins
+  fi
 fi
 
 rm -rf "$BG_DIR"
+
+# 光看 create-dmg 的退出码不够：真正决定「好不好看」的是访达写进卷里的 .DS_Store
+# （背景图文件在跳过美化时也照样会被拷进去，不能拿它当判据）。挂载实测一次。
+echo "==> 校验 DMG 布局"
+MOUNT="$(mktemp -d)"
+hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT" >/dev/null
+[ -f "$MOUNT/.DS_Store" ] && LAYOUT_OK=1 || LAYOUT_OK=0
+hdiutil detach "$MOUNT" >/dev/null || true
+# 挂载期间 LaunchServices 可能把临时路径下的 App 也登记了，和 /Applications 里的重复
+LSREG=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+[ -x "$LSREG" ] && "$LSREG" -u "$MOUNT/Dropline.app" 2>/dev/null || true
+rmdir "$MOUNT" 2>/dev/null || true
+
+if [ "$LAYOUT_OK" = "1" ]; then
+  echo "    ✓ 窗口布局已写入（.DS_Store 存在）"
+else
+  warn "DMG 里没有 .DS_Store，打开后会是默认的裸窗口（无背景图、图标位置错乱）"
+  # 发布流程里把它当硬错误，免得又悄悄发出一个丑 DMG
+  if [ "${DMG_REQUIRE_STYLE:-0}" = "1" ]; then
+    echo "❌ DMG_REQUIRE_STYLE=1，构建中止"
+    exit 1
+  fi
+fi
 
 # create-dmg 过程中会临时挂载 /Volumes/dmg.XXXX，卷卸载后 LaunchServices 里仍会留下
 # 指向它的注册记录，和 /Applications 里的形成重复注册，右键菜单会失效。这里清掉。

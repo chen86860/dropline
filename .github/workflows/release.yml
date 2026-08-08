@@ -53,7 +53,10 @@ jobs:
 
       - name: 打包 DMG
         env:
-          DMG_SKIP_JENKINS: "1"   # CI 无 GUI，直接跳过访达美化
+          # GitHub 的 macOS runner 是有图形会话的，访达美化能跑起来 ——
+          # 之前写死了跳过美化的开关，反而让 CI 一直产出没有背景图的裸 DMG。
+          # 要求布局必须生效：写不进 .DS_Store 就让这一步失败，而不是悄悄降级。
+          DMG_REQUIRE_STYLE: "1"
         run: ./Tools/dmg.sh "$VERSION"
 
       - name: 拉取历史版本安装包

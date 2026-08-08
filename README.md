@@ -96,8 +96,11 @@ xattr -dr com.apple.quarantine /Applications/Dropline.app
 ./Tools/dmg.sh          # 版本号取 CHANGELOG 最新条目，产出 dist/Dropline-<版本>.dmg
 ```
 
-带背景图、卷图标与「拖到应用程序」引导。依赖 `brew install create-dmg`；无 GUI 环境
-（CI）会自动退回 `--skip-jenkins`，只是窗口布局不生效。
+带背景图、卷图标与「拖到应用程序」引导。依赖 `brew install create-dmg`。
+
+窗口布局是 create-dmg 调访达的 AppleScript 写进卷里的 `.DS_Store`，偶尔会失败，
+脚本会重试三次；发布流程设了 `DMG_REQUIRE_STYLE=1`，布局没生效就直接报错，
+不会静默产出没有背景图的裸 DMG。调试时可用 `DMG_SKIP_STYLE=1` 跳过美化加快速度。
 
 ## 发布新版本
 
