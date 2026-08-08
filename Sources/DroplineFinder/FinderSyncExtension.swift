@@ -92,7 +92,11 @@ final class DroplineFinderSync: FIFinderSync {
         comps.host = "upload"
         comps.queryItems = [URLQueryItem(name: "list", value: listURL.path)]
         if let url = comps.url {
-            NSWorkspace.shared.open(url)
+            // activates = false：只把清单递过去，不把主 App 拉到前台。
+            // 上传进度看菜单栏图标就够了，用户的视线应该留在访达里。
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = false
+            NSWorkspace.shared.open(url, configuration: config)
         }
     }
 }

@@ -25,7 +25,7 @@ final class ServiceProvider: NSObject {
         // 只入队，不抢前台：上传进度看菜单栏图标的进度环就够了
         Task { @MainActor in
             AppState.shared.enqueue(urls)
-            AppDelegate.uploadRequestedInBackground()
+            AppDelegate.noteBackgroundUpload()
         }
     }
 }
