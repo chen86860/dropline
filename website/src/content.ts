@@ -28,6 +28,10 @@ export interface Content {
     navLabel: string;
     download: string;
     langLabel: string;
+    /** Label for the docs, used in the nav and on the landing page's docs band. */
+    docs: string;
+    /** Label pointing back at the landing page from inside the docs. */
+    overview: string;
   };
   hero: {
     badge: string;
@@ -71,13 +75,25 @@ export interface Content {
     title: string;
     lede: string;
     presetsLabel: string;
-    presets: string[];
+    /** Each preset links to its own configuration page in the manual. */
+    presets: { label: string; slug: string }[];
     enginesCaption: string;
     engineHead: [string, string];
     engines: [string, string][];
     authLabel: string;
     auth: string;
     custom: string;
+    /** Label on the link from a preset chip through to its docs page. */
+    presetsCta: string;
+  };
+  /** The band that hands readers over to the manual. */
+  docsBand: {
+    id: string;
+    eyebrow: string;
+    title: string;
+    lede: string;
+    cta: string;
+    cards: { title: string; body: string; slug: string }[];
   };
   faq: {
     id: string;
@@ -115,11 +131,13 @@ const en: Content = {
       { label: "How it works", href: "#ways" },
       { label: "Hosts", href: "#hosts" },
       { label: "FAQ", href: "#faq" },
-      { label: "Install", href: "#install" },
+      { label: "Docs", href: "/docs" },
     ],
     navLabel: "Sections",
     download: "Download",
     langLabel: "Language",
+    docs: "Docs",
+    overview: "Overview",
   },
   hero: {
     badge: "Native macOS app · Swift + SwiftUI",
@@ -208,16 +226,17 @@ const en: Content = {
       "Pick a preset and fill in your credentials, or describe the endpoint by hand. Between the three engines, almost any upload API is reachable.",
     presetsLabel: "Built-in presets",
     presets: [
-      "Amazon S3",
-      "Cloudflare R2",
-      "Aliyun OSS",
-      "Tencent COS",
-      "MinIO",
-      "SM.MS",
-      "Imgur",
-      "Lsky Pro / Chevereto",
-      "EasyImage",
+      { label: "Amazon S3", slug: "hosts/s3" },
+      { label: "Cloudflare R2", slug: "hosts/r2" },
+      { label: "Aliyun OSS", slug: "hosts/oss" },
+      { label: "Tencent COS", slug: "hosts/cos" },
+      { label: "MinIO", slug: "hosts/minio" },
+      { label: "SM.MS", slug: "hosts/smms" },
+      { label: "Imgur", slug: "hosts/imgur" },
+      { label: "Lsky Pro / Chevereto", slug: "hosts/lsky-chevereto" },
+      { label: "EasyImage", slug: "hosts/easyimage" },
     ],
+    presetsCta: "Every preset has a configuration page →",
     enginesCaption: "Upload engines",
     engineHead: ["Engine", "Use it for"],
     engines: [
@@ -229,6 +248,36 @@ const en: Content = {
     auth: "None · Bearer token · Basic · Custom header · URL query parameter",
     custom:
       "For anything else: give Dropline the upload URL, the JSON path to the link, and an object-key template. That is the whole configuration.",
+  },
+  docsBand: {
+    id: "docs",
+    eyebrow: "Documentation",
+    title: "Everything, written down.",
+    lede:
+      "A manual for the app and a configuration page for every host it speaks to — the exact fields, the exact values, and what each error means when it does not work first time.",
+    cta: "Read the docs",
+    cards: [
+      {
+        title: "Your first upload",
+        body: "Configure a host and get a working link back, in about five minutes.",
+        slug: "getting-started/quickstart",
+      },
+      {
+        title: "Host configuration",
+        body: "S3, R2, OSS, COS, MinIO, SM.MS, Imgur, Lsky Pro, EasyImage — a page each.",
+        slug: "hosts/overview",
+      },
+      {
+        title: "Template variables",
+        body: "Every {{variable}}, where it works, and recipes for the object key.",
+        slug: "guide/templates",
+      },
+      {
+        title: "Troubleshooting",
+        body: "Every error the app can show, mapped to the field that causes it.",
+        slug: "guide/troubleshooting",
+      },
+    ],
   },
   faq: {
     id: "faq",
@@ -337,11 +386,13 @@ const zh: Content = {
       { label: "怎么用", href: "#ways" },
       { label: "支持的图床", href: "#hosts" },
       { label: "常见问题", href: "#faq" },
-      { label: "安装", href: "#install" },
+      { label: "文档", href: "/zh/docs" },
     ],
     navLabel: "章节",
     download: "下载",
     langLabel: "语言",
+    docs: "文档",
+    overview: "产品介绍",
   },
   hero: {
     badge: "原生 macOS 应用 · Swift + SwiftUI",
@@ -430,16 +481,17 @@ const zh: Content = {
       "选一个预设填上密钥，或者自己把接口描述一遍。这三种引擎基本覆盖了所有上传 API。",
     presetsLabel: "内置预设",
     presets: [
-      "Amazon S3",
-      "Cloudflare R2",
-      "阿里云 OSS",
-      "腾讯云 COS",
-      "MinIO",
-      "SM.MS",
-      "Imgur",
-      "Lsky Pro / Chevereto",
-      "EasyImage",
+      { label: "Amazon S3", slug: "hosts/s3" },
+      { label: "Cloudflare R2", slug: "hosts/r2" },
+      { label: "阿里云 OSS", slug: "hosts/oss" },
+      { label: "腾讯云 COS", slug: "hosts/cos" },
+      { label: "MinIO", slug: "hosts/minio" },
+      { label: "SM.MS", slug: "hosts/smms" },
+      { label: "Imgur", slug: "hosts/imgur" },
+      { label: "Lsky Pro / Chevereto", slug: "hosts/lsky-chevereto" },
+      { label: "EasyImage", slug: "hosts/easyimage" },
     ],
+    presetsCta: "每个预设都有一页配置说明 →",
     enginesCaption: "上传引擎",
     engineHead: ["引擎", "适用于"],
     engines: [
@@ -451,6 +503,36 @@ const zh: Content = {
     auth: "无 · Bearer token · Basic · 自定义请求头 · URL 查询参数",
     custom:
       "其它情况：给 Dropline 一个上传地址、一条指向链接的 JSON path，再加一个对象键模板 —— 配置就这些。",
+  },
+  docsBand: {
+    id: "docs",
+    eyebrow: "文档",
+    title: "该写的都写下来了。",
+    lede:
+      "一份应用手册，外加它能对接的每一个图床的配置页 —— 字段填什么、值写成什么样，以及第一次没配通时每条报错分别意味着什么。",
+    cta: "阅读文档",
+    cards: [
+      {
+        title: "第一次上传",
+        body: "配好一个图床、拿到能用的链接，大约五分钟。",
+        slug: "getting-started/quickstart",
+      },
+      {
+        title: "图床配置",
+        body: "S3、R2、OSS、COS、MinIO、SM.MS、Imgur、兰空图床、EasyImage —— 一个一页。",
+        slug: "hosts/overview",
+      },
+      {
+        title: "模板变量",
+        body: "每一个 {{变量}}、能用在哪儿，以及对象键的几种常用写法。",
+        slug: "guide/templates",
+      },
+      {
+        title: "疑难排查",
+        body: "应用会报的每一条错，对应到该改的那个字段。",
+        slug: "guide/troubleshooting",
+      },
+    ],
   },
   faq: {
     id: "faq",

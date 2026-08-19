@@ -10,43 +10,90 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ZhRouteImport } from './routes/zh'
+import { Route as DocsIndexRouteImport } from './routes/docs.index'
+import { Route as DocsSplatRouteImport } from './routes/docs.$'
+import { Route as ZhIndexRouteImport } from './routes/zh.index'
+import { Route as ZhDocsIndexRouteImport } from './routes/zh.docs.index'
+import { Route as ZhDocsSplatRouteImport } from './routes/zh.docs.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ZhRoute = ZhRouteImport.update({
-  id: '/zh',
-  path: '/zh',
+const DocsIndexRoute = DocsIndexRouteImport.update({
+  id: '/docs/',
+  path: '/docs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsSplatRoute = DocsSplatRouteImport.update({
+  id: '/docs/$',
+  path: '/docs/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZhIndexRoute = ZhIndexRouteImport.update({
+  id: '/zh/',
+  path: '/zh/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZhDocsIndexRoute = ZhDocsIndexRouteImport.update({
+  id: '/zh/docs/',
+  path: '/zh/docs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZhDocsSplatRoute = ZhDocsSplatRouteImport.update({
+  id: '/zh/docs/$',
+  path: '/zh/docs/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/zh': typeof ZhRoute
+  '/docs/$': typeof DocsSplatRoute
+  '/docs/': typeof DocsIndexRoute
+  '/zh/': typeof ZhIndexRoute
+  '/zh/docs/$': typeof ZhDocsSplatRoute
+  '/zh/docs/': typeof ZhDocsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/zh': typeof ZhRoute
+  '/docs/$': typeof DocsSplatRoute
+  '/docs': typeof DocsIndexRoute
+  '/zh': typeof ZhIndexRoute
+  '/zh/docs/$': typeof ZhDocsSplatRoute
+  '/zh/docs': typeof ZhDocsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/zh': typeof ZhRoute
+  '/docs/$': typeof DocsSplatRoute
+  '/docs/': typeof DocsIndexRoute
+  '/zh/': typeof ZhIndexRoute
+  '/zh/docs/$': typeof ZhDocsSplatRoute
+  '/zh/docs/': typeof ZhDocsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/zh'
+  fullPaths: '/' | '/docs/$' | '/docs/' | '/zh/' | '/zh/docs/$' | '/zh/docs/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/zh'
-  id: '__root__' | '/' | '/zh'
+  to: '/' | '/docs/$' | '/docs' | '/zh' | '/zh/docs/$' | '/zh/docs'
+  id:
+    | '__root__'
+    | '/'
+    | '/docs/$'
+    | '/docs/'
+    | '/zh/'
+    | '/zh/docs/$'
+    | '/zh/docs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ZhRoute: typeof ZhRoute
+  DocsSplatRoute: typeof DocsSplatRoute
+  DocsIndexRoute: typeof DocsIndexRoute
+  ZhIndexRoute: typeof ZhIndexRoute
+  ZhDocsSplatRoute: typeof ZhDocsSplatRoute
+  ZhDocsIndexRoute: typeof ZhDocsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,11 +105,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/zh': {
-      id: '/zh'
+    '/docs/': {
+      id: '/docs/'
+      path: '/docs'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof DocsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/$': {
+      id: '/docs/$'
+      path: '/docs/$'
+      fullPath: '/docs/$'
+      preLoaderRoute: typeof DocsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zh/': {
+      id: '/zh/'
       path: '/zh'
-      fullPath: '/zh'
-      preLoaderRoute: typeof ZhRouteImport
+      fullPath: '/zh/'
+      preLoaderRoute: typeof ZhIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zh/docs/': {
+      id: '/zh/docs/'
+      path: '/zh/docs'
+      fullPath: '/zh/docs/'
+      preLoaderRoute: typeof ZhDocsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zh/docs/$': {
+      id: '/zh/docs/$'
+      path: '/zh/docs/$'
+      fullPath: '/zh/docs/$'
+      preLoaderRoute: typeof ZhDocsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -70,7 +145,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ZhRoute: ZhRoute,
+  DocsSplatRoute: DocsSplatRoute,
+  DocsIndexRoute: DocsIndexRoute,
+  ZhIndexRoute: ZhIndexRoute,
+  ZhDocsSplatRoute: ZhDocsSplatRoute,
+  ZhDocsIndexRoute: ZhDocsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

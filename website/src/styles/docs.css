@@ -1,0 +1,298 @@
+/* Documentation typography.
+ *
+ * The docs body is a single `dangerouslySetInnerHTML` blob compiled from
+ * Markdown, so it cannot carry utility classes — these are the element rules
+ * that give it the same voice as the rest of the site. Every value still
+ * resolves through a token in tokens.css; nothing here invents a colour.
+ */
+
+@layer components {
+  .doc-prose {
+    color: var(--color-ink-2);
+    font-size: var(--text-base);
+    line-height: 1.7;
+    /* Long object keys, template variables and CJK all wrap inside the word */
+    overflow-wrap: anywhere;
+  }
+
+  /* ── Headings ─────────────────────────────────────────────────────── */
+
+  .doc-prose > h1 {
+    font-size: var(--text-4xl);
+    line-height: 1.08;
+    font-weight: 600;
+    max-width: 20ch;
+  }
+
+  .doc-prose > h1 + p {
+    margin-top: --spacing(5);
+    font-size: var(--text-md);
+    color: var(--color-muted);
+    max-width: 62ch;
+  }
+
+  .doc-prose > h2 {
+    margin-top: --spacing(14);
+    padding-top: --spacing(6);
+    border-top: 1px solid var(--color-rule);
+    font-size: var(--text-xl);
+    font-weight: 600;
+  }
+
+  .doc-prose > h3 {
+    margin-top: --spacing(9);
+    font-size: var(--text-md);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .doc-prose > h4 {
+    margin-top: --spacing(7);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  /* The permalink is a quiet affordance: invisible until the heading is
+     hovered or the anchor itself is focused, never a layout shift. */
+  .doc-heading__link {
+    margin-inline-start: --spacing(2);
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 400;
+    opacity: 0;
+    transition: opacity var(--duration-micro) var(--ease-out);
+  }
+
+  .doc-heading:hover .doc-heading__link,
+  .doc-heading__link:focus-visible {
+    opacity: 1;
+  }
+
+  /* ── Body ─────────────────────────────────────────────────────────── */
+
+  .doc-prose p,
+  .doc-prose ul,
+  .doc-prose ol,
+  .doc-prose blockquote {
+    margin-top: --spacing(4);
+    max-width: 72ch;
+  }
+
+  .doc-prose ul,
+  .doc-prose ol {
+    padding-inline-start: --spacing(5);
+    display: grid;
+    gap: --spacing(2);
+  }
+
+  .doc-prose ul {
+    list-style: disc;
+  }
+
+  .doc-prose ol {
+    list-style: decimal;
+  }
+
+  .doc-prose li::marker {
+    color: var(--color-neutral);
+  }
+
+  .doc-prose li > ul,
+  .doc-prose li > ol {
+    margin-top: --spacing(2);
+  }
+
+  .doc-prose strong {
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .doc-prose a {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent-wash);
+    text-underline-offset: 3px;
+    transition: text-decoration-color var(--duration-micro) var(--ease-out);
+  }
+
+  .doc-prose a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .doc-prose blockquote {
+    padding: --spacing(4) --spacing(5);
+    border-inline-start: 2px solid var(--color-accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--color-accent-wash);
+    color: var(--color-ink-2);
+  }
+
+  .doc-prose blockquote > p {
+    margin-top: 0;
+  }
+
+  .doc-prose blockquote > p + p {
+    margin-top: --spacing(3);
+  }
+
+  .doc-prose hr {
+    margin-top: --spacing(10);
+    border: 0;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  /* Inline code — a tint rather than a box, so a sentence stays a sentence. */
+  .doc-prose :not(pre) > code {
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: var(--color-paper-3);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+
+  .doc-prose a > code {
+    color: inherit;
+  }
+
+  /* ── Tables ───────────────────────────────────────────────────────── */
+
+  .doc-table {
+    margin-top: --spacing(5);
+    overflow-x: auto;
+    /* The page body must never scroll sideways; wide tables scroll themselves */
+    max-width: 100%;
+  }
+
+  .doc-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+  }
+
+  .doc-table th,
+  .doc-table td {
+    padding: --spacing(3) --spacing(4) --spacing(3) 0;
+    border-bottom: 1px solid var(--color-rule);
+    vertical-align: baseline;
+  }
+
+  .doc-table th {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  .doc-table td {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+
+  .doc-table td:first-child {
+    color: var(--color-ink);
+  }
+
+  /* ── Code blocks — the page's graphite beat ───────────────────────── */
+
+  .doc-code {
+    margin: --spacing(5) 0 0;
+    border: 1px solid var(--color-graphite-rule);
+    border-radius: var(--radius-md);
+    background: var(--color-graphite);
+    overflow: hidden;
+  }
+
+  .doc-code__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: --spacing(3);
+    padding: --spacing(2) --spacing(2) --spacing(2) --spacing(4);
+    border-bottom: 1px solid var(--color-graphite-rule);
+    background: var(--color-graphite-2);
+  }
+
+  .doc-code__lang {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-mono);
+    /* The bar is a label, not content: it stays quieter than the code, but
+       still has to clear 4.5:1 against the bar's own fill. */
+    color: var(--color-graphite-muted);
+  }
+
+  .doc-code__copy {
+    padding: --spacing(1) --spacing(2.5);
+    border: 1px solid var(--color-graphite-rule);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-graphite-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    cursor: pointer;
+    transition:
+      color var(--duration-micro) var(--ease-out),
+      border-color var(--duration-micro) var(--ease-out);
+  }
+
+  .doc-code__copy:hover {
+    color: var(--color-graphite-ink);
+    border-color: var(--color-graphite-muted);
+  }
+
+  .doc-code__copy[data-copied] {
+    color: var(--color-accent-soft);
+    border-color: var(--color-accent-soft);
+  }
+
+  .doc-code__pre {
+    margin: 0;
+    padding: --spacing(4) --spacing(5);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.75;
+    background: transparent;
+    /* Belt and braces: Shiki's own `color` is kept on the element and wins, but
+       if a block ever arrives without one, it must not inherit the page's dark
+       body colour onto this dark card. */
+    color: var(--color-graphite-ink);
+    tab-size: 2;
+  }
+
+  .doc-code__pre code {
+    font-family: inherit;
+    background: none;
+  }
+
+  /* ── The search dialog ────────────────────────────────────────────── */
+
+  .search-panel {
+    animation: doc-rise var(--duration-short) var(--ease-out) both;
+  }
+
+  @keyframes doc-rise {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
+
+@utility max-w-wide {
+  max-width: var(--container-wide);
+}

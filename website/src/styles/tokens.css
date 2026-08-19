@@ -104,6 +104,8 @@
 
   /* ── Content measures ──────────────────────────────────────────────── */
   --container-page: 74rem;
+  /* The docs run wider: sidebar + measure + rail does not fit in 74rem */
+  --container-wide: 88rem;
 
   /* Content-driven breakpoints (rem, so they respect the user's font size) */
   --breakpoint-sm: 30rem;

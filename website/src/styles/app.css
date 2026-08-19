@@ -11,6 +11,7 @@
 
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./docs.css";
 
 @layer base {
   html,
@@ -123,6 +124,98 @@
     /* --color-muted, not --color-neutral: at 11px this is body-grade text and
        has to clear 4.5:1. `neutral` is reserved for hairlines and glyphs. */
     @apply font-mono text-2xs font-medium tracking-mono text-muted;
+  }
+
+  /* ── Reveal on approach ────────────────────────────────────────────
+     Guarded by `scripting: enabled`, so with JavaScript off the content is
+     simply visible instead of stranded at zero opacity. The transform is
+     small on purpose: this should read as the page settling, not as slides
+     flying in. */
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    [data-reveal][data-revealed] {
+      opacity: 1;
+      transform: none;
+      transition:
+        opacity var(--duration-long) var(--ease-out),
+        transform var(--duration-long) var(--ease-out);
+    }
+
+    /* Set on <html> when nothing has scrolled the page — see
+       `installRevealFallback`. Whatever is looking at the page is not reading
+       it, so it gets the finished layout with no animation and no delay. */
+    :root[data-reveal-all] [data-reveal] {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+  /* ── The hosts marquee ─────────────────────────────────────────────
+     Two identical tracks side by side, translated by exactly half the pair's
+     width, so the seam lands where the first track's end meets the second's
+     start and the loop is invisible. */
+  .marquee {
+    @apply relative flex overflow-hidden;
+    /* Fades at both edges so names enter and leave rather than being clipped */
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 6rem,
+      black calc(100% - 6rem),
+      transparent
+    );
+  }
+
+  .marquee__track {
+    @apply flex shrink-0 items-center gap-3 pr-3;
+    animation: marquee-slide 46s linear infinite;
+  }
+
+  .marquee:hover .marquee__track,
+  .marquee:focus-within .marquee__track {
+    animation-play-state: paused;
+  }
+
+  @keyframes marquee-slide {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee {
+      overflow-x: auto;
+    }
+
+    .marquee__track {
+      animation: none;
+    }
+  }
+
+  /* Chip — the shared shape for a preset name, in the marquee and the grid */
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-sm border border-rule bg-paper-2
+      px-3 py-1.5 font-mono text-2xs whitespace-nowrap text-ink-2
+      transition-colors duration-micro ease-out;
+  }
+
+  a.chip:hover {
+    @apply border-accent text-accent;
+  }
+
+  /* ── The hero readout's transfer bar ───────────────────────────── */
+  .transfer {
+    @apply h-px w-full overflow-hidden bg-graphite-rule;
+  }
+
+  .transfer__fill {
+    @apply block h-full bg-accent-soft;
+    transition: width var(--duration-micro) linear;
   }
 }
 

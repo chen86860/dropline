@@ -11,16 +11,23 @@ const FONTS =
   'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap'
 
 /**
- * First visit to `/` only: if the browser asks for Chinese and the visitor has
- * never picked a language, hand them the Chinese page. Runs in <head> before
- * paint, so there is no flash of the wrong language. A manual switch writes the
- * `dl-lang` cookie, after which this never fires again.
+ * First visit to an English URL: if the browser asks for Chinese and the
+ * visitor has never picked a language, hand them the Chinese page. Runs in
+ * <head> before paint, so there is no flash of the wrong language. A manual
+ * switch writes the `dl-lang` cookie, after which this never fires again.
+ *
+ * It covers the landing page and the whole manual — arriving at
+ * `/docs/hosts/r2` from a search result should land a Chinese reader on
+ * `/zh/docs/hosts/r2`, not on a page they cannot read. Only the English tree is
+ * matched, so `/zh/…` is never touched and there is no redirect loop.
  */
 const DETECT_LANG = `(function(){try{
-if(location.pathname!=="/")return;
+var p=location.pathname;
+if(p!=="/"&&p!=="/docs"&&p.indexOf("/docs/")!==0)return;
 if(document.cookie.indexOf("dl-lang=")>-1)return;
 var l=((navigator.languages&&navigator.languages[0])||navigator.language||"").toLowerCase();
-if(l.indexOf("zh")===0)location.replace("/zh"+location.hash);
+if(l.indexOf("zh")!==0)return;
+location.replace("/zh"+(p==="/"?"":p)+location.hash);
 }catch(e){}})();`
 
 export const Route = createRootRoute({
