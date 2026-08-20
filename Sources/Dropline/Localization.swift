@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 /// 界面语言。
 ///
@@ -73,6 +74,7 @@ enum L10n {
         "Clear Finished": "清除已完成",
         "Clear History": "清空历史",
         "Waiting…": "等待中…",
+        "Yesterday %@": "昨天 %@",
 
         // MARK: 菜单栏 / 主菜单
         "Upload Files…": "上传文件…",
@@ -118,6 +120,8 @@ enum L10n {
         // MARK: 设置 · 关于
         "Drop it in, the link is on your clipboard": "拖进去，链接就在剪贴板里",
         "Version %@": "版本 %@",
+        "Documentation": "使用文档",
+        "Dropline Help": "Dropline 帮助",
         "Project Home": "项目主页",
         "Report an Issue": "反馈问题",
         "(not configured)": "(未配置)",
@@ -176,9 +180,44 @@ enum L10n {
         "Empty = AWS; R2: https://<account>.r2.cloudflarestorage.com":
             "留空 = AWS；R2: https://<account>.r2.cloudflarestorage.com",
         "Public base URL (optional)": "公开访问域名（可选）",
-        "Empty means the Endpoint/Bucket/Key URL is returned. The secret is stored in the system keychain.":
-            "留空则使用 Endpoint/Bucket/Key 作为返回链接。密钥保存在系统钥匙串。",
+        "Empty means the Endpoint/Bucket/Key URL is returned. Both the Access Key ID and the Secret Access Key are stored in the system keychain.":
+            "留空则使用 Endpoint/Bucket/Key 作为返回链接。Access Key ID 与 Secret Access Key 都保存在系统钥匙串。",
         "(none)": "（无）",
+        "Store this value in the keychain instead of the config file": "把这一项的值存进钥匙串，不写入配置文件",
+        "Click the lock on a row holding a token or key — its value moves to the system keychain.":
+            "某一行放的是 Token 或密钥时，点一下锁，它的值就会转存到系统钥匙串。",
+
+        // MARK: 设置 · 配置备份
+        "Back up or restore your upload profiles": "备份或恢复上传配置",
+        "Export Profiles…": "导出配置…",
+        "Import Profiles…": "导入配置…",
+        "Export Profiles": "导出配置",
+        "Profile settings are written as readable JSON. Secrets (tokens, access keys) are included only with a password, and are encrypted with it — they are never written in the clear.":
+            "配置本身以可读的 JSON 写出。Token、密钥等机密项只有设置口令后才会包含，并用该口令加密 —— 任何情况下都不会明文落盘。",
+        "Include secrets": "包含密钥",
+        "Backup password": "备份口令",
+        "Confirm backup password": "确认备份口令",
+        "Use a password of at least 8 characters": "口令至少 8 个字符",
+        "The two passwords don’t match": "两次输入的口令不一致",
+        "Keep this password safe — without it the secrets cannot be restored.":
+            "请保管好这个口令，丢了就无法恢复其中的密钥。",
+        "Without secrets you will have to re-enter every token and key after importing.":
+            "不含密钥时，导入后需要重新填写每个配置的 Token 和密钥。",
+        "Cancel": "取消",
+        "Export…": "导出…",
+        "Import": "导入",
+        "Choose where to save the profile backup": "选择配置备份的保存位置",
+        "Choose a Dropline profile backup": "选择 Dropline 配置备份文件",
+        "Exported %d profile(s) to %@": "已导出 %d 个配置到 %@",
+        "Imported %d profile(s)": "已导入 %d 个配置",
+        "Imported %d profile(s). This backup carried no secrets — fill in the tokens and keys for each one.":
+            "已导入 %d 个配置。该备份不含密钥，请为每个配置补填 Token 和密钥。",
+        "This backup is password-protected": "该备份已用口令加密",
+        "Backup failed": "备份出错",
+        "Done": "完成",
+        "Not a Dropline profile backup": "这不是 Dropline 的配置备份文件",
+        "Wrong password, or the file has been modified": "口令不对，或文件已被改动",
+        "Could not read the backup: %@": "无法读取备份文件：%@",
 
         // MARK: 上传方式 / 鉴权
         "Form upload (multipart/form-data)": "表单上传 (multipart/form-data)",
@@ -229,6 +268,21 @@ enum L10n {
         "Path `%@` not found in the response": "响应中找不到路径 `%@`",
         "The value at path `%@` is not a string": "路径 `%@` 对应的值不是字符串",
     ]
+}
+
+// MARK: - 文档站
+
+enum DocsLink {
+    /// 文档分中英两套，跟 App 内的界面语言走（不是系统语言）
+    static var url: String {
+        L10n.resolved == .zh
+            ? "https://dropline.emmmm.dev/zh/docs"
+            : "https://dropline.emmmm.dev/docs"
+    }
+
+    static func open() {
+        if let u = URL(string: url) { NSWorkspace.shared.open(u) }
+    }
 }
 
 extension String {

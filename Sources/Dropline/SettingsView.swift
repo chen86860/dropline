@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject var state: AppState
@@ -147,6 +148,7 @@ struct AboutSettings: View {
                 HStack(spacing: 10) {
                     Button("Check for Updates…".t) { updater.checkForUpdates() }
                         .disabled(!updater.canCheck)
+                    Button("Documentation".t) { DocsLink.open() }
                     Button("Project Home".t) { open(repoURL) }
                     Button("Report an Issue".t) { open("\(repoURL)/issues") }
                 }
@@ -209,6 +211,8 @@ struct ProfilesSettings: View {
                     } label: { Image(systemName: "minus") }
                         .buttonStyle(.borderless)
                         .disabled(selection == nil)
+
+                    ProfileBackupMenu()
 
                     Spacer()
 
@@ -300,10 +304,10 @@ struct ProfileEditor: View {
                 .padding(.bottom, 16)
             }
         }
-        .onAppear { secret = Keychain.get(account: Keychain.secretAccount(for: profile.id)) }
+        .onAppear { secret = Keychain.value(profileID: profile.id, slot: SecretSlot.authSecret) }
         .onChange(of: profile) { _ in state.saveProfiles() }
         .onChange(of: secret) { new in
-            Keychain.set(new, account: Keychain.secretAccount(for: profile.id))
+            Keychain.set(new, profileID: profile.id, slot: SecretSlot.authSecret)
         }
     }
 
@@ -376,7 +380,7 @@ struct ProfileEditor: View {
             SecureField("Secret Access Key", text: $secret)
             TextField("Public base URL (optional)".t, text: $profile.s3PublicBaseURL,
                       prompt: Text("https://cdn.example.com"))
-            Text("Empty means the Endpoint/Bucket/Key URL is returned. The secret is stored in the system keychain.".t)
+            Text("Empty means the Endpoint/Bucket/Key URL is returned. Both the Access Key ID and the Secret Access Key are stored in the system keychain.".t)
                 .font(.caption2).foregroundStyle(.secondary)
         }
     }
@@ -423,6 +427,180 @@ struct ProfileEditor: View {
     }
 }
 
+// MARK: - 配置备份（导出 / 导入）
+
+struct ProfileBackupMenu: View {
+    @EnvironmentObject var state: AppState
+
+    @State private var showExport = false
+    @State private var includeSecrets = true
+    @State private var password = ""
+    @State private var passwordAgain = ""
+
+    @State private var pending: ProfileBackup?
+    @State private var showImportPassword = false
+    @State private var importPassword = ""
+
+    @State private var note = ""
+    @State private var noteIsError = false
+    @State private var showNote = false
+
+    var body: some View {
+        Menu {
+            Button("Export Profiles…".t) { showExport = true }
+            Button("Import Profiles…".t) { startImport() }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .menuStyle(.borderlessButton)
+        .frame(width: 28)
+        .help("Back up or restore your upload profiles".t)
+        .sheet(isPresented: $showExport) { exportSheet }
+        .sheet(isPresented: $showImportPassword) { importPasswordSheet }
+        .alert(noteIsError ? "Backup failed".t : "Done".t, isPresented: $showNote) {
+            Button("OK") {}
+        } message: {
+            Text(note)
+        }
+    }
+
+    // MARK: 导出
+
+    /// 空字符串表示可以导出
+    private var exportProblem: String {
+        guard includeSecrets else { return "" }
+        if password.count < 8 { return "Use a password of at least 8 characters".t }
+        if password != passwordAgain { return "The two passwords don’t match".t }
+        return ""
+    }
+
+    private var exportSheet: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Export Profiles".t).font(.headline)
+            Text("Profile settings are written as readable JSON. Secrets (tokens, access keys) are included only with a password, and are encrypted with it — they are never written in the clear.".t)
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Toggle("Include secrets".t, isOn: $includeSecrets)
+            if includeSecrets {
+                SecureField("Backup password".t, text: $password)
+                SecureField("Confirm backup password".t, text: $passwordAgain)
+                Text(exportProblem.isEmpty
+                     ? "Keep this password safe — without it the secrets cannot be restored.".t
+                     : exportProblem)
+                    .font(.caption)
+                    .foregroundStyle(exportProblem.isEmpty ? Color.secondary : .red)
+            } else {
+                Text("Without secrets you will have to re-enter every token and key after importing.".t)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel".t) { showExport = false }
+                    .keyboardShortcut(.cancelAction)
+                Button("Export…".t) { runExport() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!exportProblem.isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 440)
+    }
+
+    private func runExport() {
+        showExport = false
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = defaultFilename()
+        panel.message = "Choose where to save the profile backup".t
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let data = try ProfileBackupService.make(profiles: state.profiles,
+                                                     activeProfileID: state.activeProfileID,
+                                                     includeSecrets: includeSecrets,
+                                                     password: includeSecrets ? password : "")
+            try data.write(to: url, options: .atomic)
+            password = ""
+            passwordAgain = ""
+            show("Exported %d profile(s) to %@".t(state.profiles.count, url.lastPathComponent),
+                 error: false)
+        } catch {
+            show(error.localizedDescription, error: true)
+        }
+    }
+
+    private func defaultFilename() -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return "Dropline-Profiles-\(f.string(from: Date())).json"
+    }
+
+    // MARK: 导入
+
+    private func startImport() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.message = "Choose a Dropline profile backup".t
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let backup = try ProfileBackupService.read(try Data(contentsOf: url))
+            if backup.encryptedSecrets != nil {
+                pending = backup
+                importPassword = ""
+                showImportPassword = true
+            } else {
+                finishImport(backup, password: nil)
+            }
+        } catch {
+            show(error.localizedDescription, error: true)
+        }
+    }
+
+    private var importPasswordSheet: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("This backup is password-protected".t).font(.headline)
+            SecureField("Backup password".t, text: $importPassword)
+            HStack {
+                Spacer()
+                Button("Cancel".t) { showImportPassword = false; pending = nil }
+                    .keyboardShortcut(.cancelAction)
+                Button("Import".t) {
+                    showImportPassword = false
+                    if let backup = pending { finishImport(backup, password: importPassword) }
+                    pending = nil
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(importPassword.isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 380)
+    }
+
+    private func finishImport(_ backup: ProfileBackup, password: String?) {
+        do {
+            let secrets = try ProfileBackupService.secrets(from: backup, password: password)
+            let count = state.importProfiles(backup, secrets: secrets)
+            show(backup.carriesSecrets
+                 ? "Imported %d profile(s)".t(count)
+                 : "Imported %d profile(s). This backup carried no secrets — fill in the tokens and keys for each one.".t(count),
+                 error: false)
+        } catch {
+            show(error.localizedDescription, error: true)
+        }
+    }
+
+    private func show(_ text: String, error: Bool) {
+        note = text
+        noteIsError = error
+        showNote = true
+    }
+}
+
 // MARK: - 键值对编辑器
 
 struct KeyValueEditor: View {
@@ -442,7 +620,19 @@ struct KeyValueEditor: View {
             ForEach($items) { $item in
                 HStack(spacing: 6) {
                     TextField("Key", text: $item.key)
-                    TextField("Value", text: $item.value)
+                    if item.isSecret {
+                        SecureField("Value", text: $item.value)
+                    } else {
+                        TextField("Value", text: $item.value)
+                    }
+                    Button {
+                        item.isSecret.toggle()
+                    } label: {
+                        Image(systemName: item.isSecret ? "lock.fill" : "lock.open")
+                            .foregroundStyle(item.isSecret ? Color.accentColor : .secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Store this value in the keychain instead of the config file".t)
                     Button {
                         items.removeAll { $0.id == item.id }
                     } label: { Image(systemName: "minus.circle") }
@@ -451,6 +641,9 @@ struct KeyValueEditor: View {
             }
             if items.isEmpty {
                 Text("(none)".t).font(.caption2).foregroundStyle(.tertiary)
+            } else {
+                Text("Click the lock on a row holding a token or key — its value moves to the system keychain.".t)
+                    .font(.caption2).foregroundStyle(.secondary)
             }
         }
     }

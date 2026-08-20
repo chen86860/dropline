@@ -47,7 +47,7 @@ enum UploadService {
     static func upload(fileURL: URL,
                        profile: UploaderProfile,
                        progress: @escaping @Sendable (Double) -> Void) async throws -> String {
-        let secret = Keychain.get(account: Keychain.secretAccount(for: profile.id))
+        let secret = Keychain.value(profileID: profile.id, slot: SecretSlot.authSecret)
         var ctx = Templating.context(for: fileURL)
         ctx["key"] = Templating.render(profile.keyTemplate, ctx)
 

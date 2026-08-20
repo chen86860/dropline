@@ -10,6 +10,59 @@ update dialog shows whichever matches the language chosen in Settings.
 Before releasing, add a `## [version] - date` section at the top of **both** files — a missing
 section aborts the release, and a missing translation means no release notes in that language.
 
+## [1.5.0] - 2026-08-20
+
+### Security
+
+- **The S3 Access Key ID is no longer stored in the clear.** It used to sit in
+  `~/Library/Preferences/dev.emmmm.Dropline.plist` next to the rest of the profile. It now lives
+  in the system keychain like the Secret Access Key always has. Existing profiles are migrated on
+  first launch and the plaintext copy is wiped.
+- **Custom headers and form fields can be marked secret.** Click the lock on a row holding a token
+  or an API key and its value moves to the keychain instead of the config file — the "token" field
+  in the EasyImage preset, an `Authorization` header on a custom host, and so on. On first launch
+  fields whose name looks like a credential (`token`, `auth`, `apikey`, `secret`, `signature`, …)
+  are marked once automatically; the lock is yours to toggle from then on.
+- **Deleting a profile now removes all of its secrets.** Previously only the auth secret was
+  deleted and anything else was left behind in the keychain.
+
+### Added
+
+- **Export and import profiles**, so a backup survives a new machine. Settings → Hosts → the "⋯"
+  menu at the bottom left. The profile settings are written as readable JSON; secrets are included
+  only when you set a password and are encrypted with it (PBKDF2-HMAC-SHA256, 310 000 rounds, then
+  AES-GCM) — they are never written in the clear. Import is additive: every profile comes in under
+  a fresh id, so an import can never overwrite what you already have.
+- **Help → Dropline Help** opens the documentation site, and About gained a "Documentation" button.
+  Both follow the language chosen in Settings. This replaces the stock menu item, which only ever
+  said "Help isn't available for Dropline".
+- **File type icons and image thumbnails** in both the upload queue and the history. Anything the
+  system does not recognise still falls back to the old link icon. Queue thumbnails are read from
+  the local file, so the picture is there before the upload even starts.
+- **Readable timestamps**: today shows the time, yesterday shows `Yesterday 16:40`, earlier this
+  week shows the weekday, anything older shows the full date. The upload queue shows them too.
+- **Open in Browser** button on every row, next to the copy button.
+- **The copy button confirms**: it turns into a checkmark for a moment so you can tell the click
+  registered.
+- **History rows show the file size**, the same way the queue always has.
+
+### Changed
+
+- **All secrets are now kept in a single keychain item** instead of one per field. Keychain items
+  are authorised individually, so a signature change meant one prompt per item; now it is at most
+  one prompt in total. Secrets are also read once per launch instead of on every upload.
+- **Queue rows lead with the file, not the status.** The thumbnail or type icon takes the front,
+  and the status moves to a small badge in its corner — waiting, uploading, done, failed. Eight
+  files dropped at once no longer look like eight identical rows.
+- **The queue and the history are one component now.** They had drifted apart by a few points of
+  spacing and padding, which showed as the row height jumping when switching tabs.
+
+### Fixed
+
+- **Row height no longer jumps** when an upload finishes, or when switching between the two tabs.
+- **A missing field no longer discards everything.** `profiles.v1` and `history.v1` are decoded
+  field by field, so one unreadable entry can no longer wipe every profile or the whole history.
+
 ## [1.4.0] - 2026-08-08
 
 ### Added

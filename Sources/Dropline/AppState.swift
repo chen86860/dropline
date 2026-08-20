@@ -13,6 +13,11 @@ struct UploadItem: Identifiable {
     var byteCount: Int64
     var progress: Double = 0
     var status: Status = .waiting
+    let addedAt = Date()
+    var finishedAt: Date?
+
+    /// 行里显示的时间：完成后看完成时刻，跟历史记录一个口径；在队列里排队时看入队时刻
+    var timestamp: Date { finishedAt ?? addedAt }
 
     var isFinished: Bool {
         if case .done = status { return true }
@@ -105,6 +110,7 @@ final class AppState: ObservableObject {
     private let profilesKey = "profiles.v1"
     private let activeKey = "activeProfile.v1"
     private let historyKey = "history.v1"
+    private let fieldSecretsMarkedKey = "fieldSecretsMarked.v1"
     private var running = 0
 
     private init() {
@@ -119,12 +125,29 @@ final class AppState: ObservableObject {
 
     private func load() {
         let d = UserDefaults.standard
+        var needsSecretMigration = false
         if let data = d.data(forKey: profilesKey),
            let decoded = try? JSONDecoder().decode([UploaderProfile].self, from: data) {
-            profiles = decoded
+            // 1.4.x 及更早的版本把 Access Key ID / 表单里的 token 明文写在 plist 里。
+            // 解出来还带着值就说明是老数据，先用着，稍后一次性迁进钥匙串并抹掉明文。
+            needsSecretMigration = decoded.contains { !$0.secretValues.isEmpty }
+            // 老配置里的 Header / 表单项没有「机密」标记，按字段名认一次。只做一遍，
+            // 之后用户自己开关的结果就不再被覆盖。
+            let markFields = !d.bool(forKey: fieldSecretsMarkedKey)
+            profiles = decoded.map { p in
+                var p = p
+                if markFields { p.markLikelySecretFields() }
+                p.applySecrets(Keychain.secrets(forProfile: p.id))
+                return p
+            }
+            if markFields {
+                needsSecretMigration = needsSecretMigration || profiles.contains { !$0.secretValues.isEmpty }
+            }
         } else {
             profiles = [ProfilePresets.blankHTTP]
         }
+        // 全新安装也要落这个标记，否则用户手建的字段会在下次启动时被认一遍
+        d.set(true, forKey: fieldSecretsMarkedKey)
         if let s = d.string(forKey: activeKey), let uuid = UUID(uuidString: s) {
             activeProfileID = uuid
         }
@@ -149,11 +172,16 @@ final class AppState: ObservableObject {
         syncPreferredLanguages()
         // 启动时同步一次：扩展容器可能刚被系统创建，或被用户清理过
         syncFinderExtension()
+        if needsSecretMigration { saveProfiles() }
     }
 
     func saveProfiles() {
         let d = UserDefaults.standard
-        if let data = try? JSONEncoder().encode(profiles) { d.set(data, forKey: profilesKey) }
+        for p in profiles { Keychain.sync(p.secretValues, forProfile: p.id) }
+        // 落盘的是抹掉机密字段的副本，内存里的 profiles 不动
+        if let data = try? JSONEncoder().encode(profiles.map { $0.strippingSecrets() }) {
+            d.set(data, forKey: profilesKey)
+        }
         d.set(activeProfileID?.uuidString, forKey: activeKey)
     }
 
@@ -178,8 +206,29 @@ final class AppState: ObservableObject {
         saveProfiles()
     }
 
+    /// 导入是「追加」：每份配置都换一个新 id，绝不覆盖现有配置。
+    /// 重复导入同一个文件会得到重复项，删掉即可 —— 比静默覆盖安全。
+    /// 返回导入的条数。
+    @discardableResult
+    func importProfiles(_ backup: ProfileBackup, secrets: [String: [String: String]]) -> Int {
+        var imported = 0
+        for var p in backup.profiles {
+            let values = secrets[p.id.uuidString] ?? [:]
+            p.id = UUID()
+            p.applySecrets(values)                      // 内存里填回机密字段
+            Keychain.store(values, forProfile: p.id)    // 含认证密钥，它不在 profile 结构里
+            profiles.append(p)
+            imported += 1
+        }
+        if activeProfileID == nil || !profiles.contains(where: { $0.id == activeProfileID }) {
+            activeProfileID = profiles.first?.id
+        }
+        saveProfiles()
+        return imported
+    }
+
     func deleteProfile(_ id: UUID) {
-        Keychain.delete(account: Keychain.secretAccount(for: id))
+        Keychain.deleteAll(forProfile: id)
         profiles.removeAll { $0.id == id }
         if activeProfileID == id { activeProfileID = profiles.first?.id }
         saveProfiles()
@@ -245,6 +294,7 @@ final class AppState: ObservableObject {
     private func finish(id: UUID, result: Result<String, Error>, item: UploadItem, profile: UploaderProfile) {
         running = max(0, running - 1)
         if let i = items.firstIndex(where: { $0.id == id }) {
+            items[i].finishedAt = Date()
             switch result {
             case .success(let url):
                 items[i].status = .done(url)

@@ -37,6 +37,12 @@ struct DroplineApp: App {
                 .keyboardShortcut("c", modifiers: [.command, .shift])
                 .disabled(state.history.isEmpty)
             }
+            // 系统默认的「Dropline 帮助」指向不存在的 help book，点了只会弹
+            // 「Help isn't available for Dropline」。整组换成文档站。
+            CommandGroup(replacing: .help) {
+                Button("Dropline Help".t) { DocsLink.open() }
+                    .keyboardShortcut("?", modifiers: .command)
+            }
         }
 
         Settings {
