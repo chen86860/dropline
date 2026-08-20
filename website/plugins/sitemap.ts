@@ -17,6 +17,13 @@ const SITE_URL = 'https://dropline.emmmm.dev'
 
 const CONTENT_DIR = join(process.cwd(), 'src', 'docs', 'content')
 
+/**
+ * Pages that exist in both languages but not as files under `content/`. The
+ * changelog is compiled from the repository's CHANGELOG at build time, so
+ * walking the content tree would miss it and the sitemap would under-report.
+ */
+const VIRTUAL_SLUGS = ['changelog']
+
 interface Entry {
   path: string
   priority: string
@@ -37,9 +44,10 @@ function walk(dir: string): string[] {
 function slugsFor(lang: string) {
   const dir = join(CONTENT_DIR, lang)
   try {
-    return walk(dir).map((file) =>
+    const files = walk(dir).map((file) =>
       relative(dir, file).replace(/\.md$/, '').split(sep).join('/'),
     )
+    return [...files, ...VIRTUAL_SLUGS]
   } catch {
     return []
   }

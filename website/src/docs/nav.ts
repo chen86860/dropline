@@ -52,6 +52,11 @@ export const DOC_GROUPS: DocGroup[] = [
       'hosts/custom-binary',
     ],
   },
+  {
+    id: 'releases',
+    label: { en: 'Release notes', zh: '发布说明' },
+    items: ['changelog'],
+  },
 ]
 
 /** Strings the docs chrome needs that do not come from a Markdown file. */

@@ -45,6 +45,12 @@ export interface DocModule {
   toc: TocEntry[]
   html: string
   text: string
+  /**
+   * Repo-relative path, when the page was not compiled from a file under
+   * `content/` — the changelog is read from the repository root. Left unset by
+   * the Markdown plugin, which derives the path from the file it compiled.
+   */
+  source?: string
 }
 
 /** One language's compiled Markdown, keyed by slug. */
@@ -71,7 +77,7 @@ export class DocSet {
         toc: mod.toc,
         html: mod.html,
         text: mod.text,
-        source: `website/src/docs/content/${lang}/${match[1]}.md`,
+        source: mod.source ?? `website/src/docs/content/${lang}/${match[1]}.md`,
       })
     }
   }
