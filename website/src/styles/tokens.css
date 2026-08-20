@@ -103,8 +103,8 @@
   --z-index-modal: 400;
 
   /* ── Content measures ──────────────────────────────────────────────── */
-  --container-page: 74rem;
-  /* The docs run wider: sidebar + measure + rail does not fit in 74rem */
+  /* One shell measure for landing and docs alike — wide enough for the docs'
+     sidebar + measure + rail, so crossing between them never jumps. */
   --container-wide: 88rem;
 
   /* Content-driven breakpoints (rem, so they respect the user's font size) */

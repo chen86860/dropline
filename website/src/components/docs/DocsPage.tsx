@@ -9,7 +9,7 @@ import { useActiveHeading, useCodeCopy } from '../../lib/docs-client'
 import { AppLink } from '../../lib/links'
 import { ArrowIcon, ChevronIcon, CloseIcon, MenuIcon } from '../icons'
 import { SiteFooter } from '../SiteFooter'
-import { SHELL_WIDE, SearchTrigger, SiteHeader, docsNavLinks } from '../SiteHeader'
+import { SHELL, SearchTrigger, SiteHeader, docsNavLinks } from '../SiteHeader'
 
 /**
  * The docs shell: sidebar, article, on-page rail.
@@ -46,7 +46,6 @@ export function DocsPage({ lang, docs, doc }: { lang: Lang; docs: DocSet; doc: D
     <>
       <SiteHeader
         lang={lang}
-        wide
         links={docsNavLinks(lang)}
         langHref={langHref}
         slot={<SearchTrigger label={ui.searchOpen} onOpen={openSearch} />}
@@ -64,7 +63,7 @@ export function DocsPage({ lang, docs, doc }: { lang: Lang; docs: DocSet; doc: D
       />
 
       <div
-        className={`${SHELL_WIDE} grid grid-cols-[minmax(0,1fr)] items-start gap-x-10 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)_13rem]`}
+        className={`${SHELL} grid grid-cols-[minmax(0,1fr)] items-start gap-x-10 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)_13rem]`}
       >
         {/* ── Sidebar ─────────────────────────────────────────────────── */}
         <nav
@@ -192,7 +191,7 @@ export function DocsPage({ lang, docs, doc }: { lang: Lang; docs: DocSet; doc: D
       </div>
 
       <div className="border-t border-rule">
-        <SiteFooter lang={lang} wide />
+        <SiteFooter lang={lang} />
       </div>
 
       <DocsSearch lang={lang} docs={docs} open={searchOpen} onClose={() => setSearchOpen(false)} />
@@ -271,8 +270,8 @@ export function DocsNotFound({ lang, docs }: { lang: Lang; docs: DocSet }) {
 
   return (
     <>
-      <SiteHeader lang={lang} wide links={docsNavLinks(lang)} />
-      <main className={`${SHELL_WIDE} grid place-items-start gap-6 py-28`}>
+      <SiteHeader lang={lang} links={docsNavLinks(lang)} />
+      <main className={`${SHELL} grid place-items-start gap-6 py-28`}>
         <p className="mono-label">404</p>
         <h1 className="max-w-[18ch] text-3xl font-semibold">{ui.notFoundTitle}</h1>
         <p className="max-w-[60ch] text-md text-muted">{ui.notFoundBody}</p>
@@ -295,7 +294,7 @@ export function DocsNotFound({ lang, docs }: { lang: Lang; docs: DocSet }) {
         </ul>
       </main>
       <div className="border-t border-rule">
-        <SiteFooter lang={lang} wide />
+        <SiteFooter lang={lang} />
       </div>
     </>
   )

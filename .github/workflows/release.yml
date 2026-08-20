@@ -117,6 +117,14 @@ jobs:
         run: |
           ./tools/changelog.py "$VERSION" > notes.md
           {
+            echo
+            echo "---"
+            echo
+            echo '下载 `Dropline.dmg`，拖进「应用程序」即可。'
+            echo '直链（永远指向最新正式版）：'
+            echo '<https://github.com/'"${{ github.repository }}"'/releases/latest/download/Dropline.dmg>'
+            echo 'ad-hoc 签名，首次打开请右键 App →「打开」，或执行：'
+            echo '`xattr -dr com.apple.quarantine /Applications/Dropline.app`'
           } >> notes.md
 
           # DMG 与 appcast.xml 的资产名都不带版本号，这样

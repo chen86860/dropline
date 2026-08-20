@@ -1,17 +1,17 @@
 
 import { AppIcon } from './icons'
-import { SHELL, SHELL_WIDE } from './SiteHeader'
+import { SHELL } from './SiteHeader'
 import { AppLink } from '../lib/links'
 import { CONTENT, PATH_FOR, type Lang } from '../content'
 import { rememberLang } from '../lib/browser'
 
 /** Ft1 mast-headed footer, shared by the landing page and every docs page. */
-export function SiteFooter({ lang, wide = false }: { lang: Lang; wide?: boolean }) {
+export function SiteFooter({ lang }: { lang: Lang }) {
   const t = CONTENT[lang]
 
   return (
     <footer
-      className={`${wide ? SHELL_WIDE : SHELL} border-t border-rule pt-16`}
+      className={`${SHELL} border-t border-rule pt-16`}
       style={{ paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))' }}
     >
       <p className="flex items-center gap-3 font-display text-2xl font-semibold tracking-display text-ink">

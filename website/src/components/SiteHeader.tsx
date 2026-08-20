@@ -8,8 +8,9 @@ import { rememberLang } from '../lib/browser'
 
 const LANG_NAME: Record<Lang, string> = { en: 'EN', zh: '中文' }
 
-export const SHELL = 'mx-auto w-full max-w-page px-[clamp(1.125rem,4vw,3rem)]'
-export const SHELL_WIDE = 'mx-auto w-full max-w-wide px-[clamp(1.125rem,4vw,3rem)]'
+/** One measure for the whole site: the landing page and the docs share it, so
+    navigating between them never shifts the content edges. */
+export const SHELL = 'mx-auto w-full max-w-wide px-[clamp(1.125rem,4vw,3rem)]'
 
 /**
  * One header for the whole site.
@@ -21,15 +22,12 @@ export const SHELL_WIDE = 'mx-auto w-full max-w-wide px-[clamp(1.125rem,4vw,3rem
  */
 export function SiteHeader({
   lang,
-  wide = false,
   links,
   langHref,
   slot,
   before,
 }: {
   lang: Lang
-  /** Docs run wider than the landing page's 74rem measure. */
-  wide?: boolean
   links?: { label: string; href: string }[]
   /** Where the language toggle points; defaults to the other language's home. */
   langHref?: Record<Lang, string>
@@ -45,7 +43,7 @@ export function SiteHeader({
   return (
     <header className="sticky top-0 z-nav border-b border-rule bg-paper/85 backdrop-blur-[10px]">
       <div
-        className={`${wide ? SHELL_WIDE : SHELL} flex min-h-[60px] items-center gap-3 xl:min-h-[68px]`}
+        className={`${SHELL} flex min-h-[60px] items-center gap-3 xl:min-h-[68px]`}
       >
         {before}
 
