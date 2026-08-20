@@ -5,6 +5,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 
+import { PostHogAnalytics } from '../lib/posthog'
 import appCss from '../styles/app.css?url'
 
 const FONTS =
@@ -72,6 +73,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <PostHogAnalytics />
         <Scripts />
       </body>
     </html>
