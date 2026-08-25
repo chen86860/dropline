@@ -5,7 +5,7 @@ import { SHELL, SiteHeader } from './SiteHeader'
 import { CONTENT, DOWNLOAD_DMG, REPO, type Lang } from '../content'
 import { docHref } from '../docs/routes'
 import { AppLink } from '../lib/links'
-import { useUploadDemo } from '../lib/motion'
+import { useTilt } from '../lib/motion'
 
 /** Split Studio: text half and proof half, and the pairing flips down the page. */
 const SPLIT = 'grid grid-cols-[minmax(0,1fr)] gap-10 xl:gap-24 xl:items-center'
@@ -29,7 +29,7 @@ export function Landing({ lang }: { lang: Lang }) {
       <SiteHeader lang={lang} />
 
       <main>
-        {/* ── Hero — H2 diptych: statement left, machine readout right ─── */}
+        {/* ── Hero — H2 diptych: statement left, the app itself right ──── */}
         <section className={`${SHELL} ${SPLIT_LEFT} pt-24 pb-16`}>
           <div>
             <p className="inline-flex items-center gap-2 rounded-sm border border-rule bg-paper-2 px-3 py-1.5 font-mono text-2xs tracking-mono text-muted">
@@ -37,7 +37,9 @@ export function Landing({ lang }: { lang: Lang }) {
               {t.hero.badge}
             </p>
 
-            <h1 className="mt-5 text-display font-semibold">{t.hero.title}</h1>
+            {/* Balanced wrapping keeps the headline from stranding a single
+                glyph on its own line — CJK breaks anywhere, so it needs help. */}
+            <h1 className="mt-5 text-balance text-display font-semibold">{t.hero.title}</h1>
             <p className="mt-6 max-w-[46ch] text-md text-muted">{t.hero.lede}</p>
 
             <div className="mt-10 flex flex-wrap gap-3">
@@ -69,7 +71,7 @@ export function Landing({ lang }: { lang: Lang }) {
             </ul>
           </div>
 
-          <Readout copy={t.hero.readout} />
+          <Showcase shot={t.hero.shot} />
         </section>
 
         {/* ── The hosts, moving past ─────────────────────────────────────
@@ -351,56 +353,37 @@ export function Landing({ lang }: { lang: Lang }) {
 }
 
 /**
- * The hero artefact: a machine readout of one upload, drawn with type and
- * hairlines. Deliberately not a mock app window — no fake chrome, no dots.
+ * The hero's proof half: the app itself, floating.
  *
- * It animates through the four states of a real upload and then holds. The
- * server renders the last of those states, so the markup is complete and
- * legible before — and without — any of this.
+ * The screenshot is the product — no mock chrome around it, because it already
+ * has its own. The stage carries the perspective for the pointer tilt and the
+ * ambient glow behind the glass.
+ *
+ * All of the motion is enhancement: the shot is a plain `<img>` with its
+ * intrinsic size declared, so it reserves its own space and is finished before
+ * any script runs.
  */
-function Readout({ copy }: { copy: (typeof CONTENT)['en']['hero']['readout'] }) {
-  const { phase, progress, typed } = useUploadDemo(copy.url)
+function Showcase({ shot }: { shot: (typeof CONTENT)['en']['hero']['shot'] }) {
+  const stage = useTilt<HTMLDivElement>()
 
   return (
-    <figure className="m-0 overflow-hidden rounded-md border border-graphite-rule bg-graphite font-mono text-xs/relaxed text-graphite-muted shadow-whisper">
-      <div className="flex items-baseline gap-3 px-4 py-3">
-        <span className="break-anywhere text-graphite-ink">{copy.file}</span>
-        <span className="ml-auto whitespace-nowrap">{copy.size}</span>
-      </div>
+    <div ref={stage} className="stage">
+      <span className="stage__glow" aria-hidden="true" />
 
-      {/* The transfer bar sits on the hairline between the two rows, so it
-          reads as the rule filling rather than as a widget bolted on. */}
-      <div className="transfer" aria-hidden="true">
-        <span className="transfer__fill" style={{ width: `${Math.round(progress * 100)}%` }} />
-      </div>
-
-      <div className="flex items-baseline gap-3 px-4 py-3">
-        <span className="tracking-mono whitespace-nowrap text-accent-soft">{copy.verb}</span>
-        <span className="break-anywhere">{copy.key}</span>
-        <span
-          className={[
-            'ml-auto rounded-[4px] border border-accent-soft px-2 text-2xs tracking-mono whitespace-nowrap text-accent-soft',
-            'transition-opacity duration-short ease-out',
-            phase >= 2 ? 'opacity-100' : 'opacity-0',
-          ].join(' ')}
-        >
-          {copy.status}
-        </span>
-      </div>
-
-      <figcaption className="grid gap-1 border-t border-graphite-rule bg-graphite-2 p-4">
-        <span className="mono-label text-graphite-muted">{copy.caption}</span>
-        <span className="break-anywhere min-h-[1.65em] text-graphite-ink">
-          {typed}
-          <span
-            className={[
-              'inline-block w-[0.55em] border-b-2 border-accent-soft align-baseline',
-              typed === copy.url ? 'opacity-0' : '',
-            ].join(' ')}
-            aria-hidden="true"
-          />
-        </span>
-      </figcaption>
-    </figure>
+      <picture>
+        <source srcSet="/dropline-app.webp" type="image/webp" />
+        <img
+          className="stage__shot"
+          src="/dropline-app.png"
+          width={1156}
+          height={1184}
+          alt={shot.alt}
+          /* Above the fold on every viewport — never defer it. */
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+        />
+      </picture>
+    </div>
   )
 }

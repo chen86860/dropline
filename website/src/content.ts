@@ -41,15 +41,7 @@ export interface Content {
     secondary: string;
     requirements: string;
     meta: string[];
-    readout: {
-      file: string;
-      size: string;
-      verb: string;
-      key: string;
-      status: string;
-      caption: string;
-      url: string;
-    };
+    shot: { alt: string };
   };
   ways: {
     id: string;
@@ -142,19 +134,13 @@ const en: Content = {
   hero: {
     badge: 'Native macOS app · Swift + SwiftUI',
     title: 'Drop a file. Get the link.',
-    lede: 'Dropline lives in your menu bar and sends an image, a video or anything else to your own S3 bucket, your R2 account or your image host — by drag & drop, by right-click in Finder, or from the Dock. The public URL is on your clipboard before you switch windows.',
+    lede: 'Dropline lives in your menu bar. Drag a file in, right-click it in Finder, or drop it on the Dock — it lands in your own S3 bucket, R2 account or image host, and the public URL is on your clipboard before you switch windows.',
     primary: 'Download for macOS',
     secondary: 'View the source',
-    requirements: 'macOS 13 Ventura or later, on Apple Silicon. Free and open source.',
-    meta: ['macOS 13+', 'Apple Silicon', '≈1 MB binary', 'MIT licence'],
-    readout: {
-      file: 'screenshot-2026-08-08.png',
-      size: '2.4 MB',
-      verb: 'PUT',
-      key: 'assets/2026/08/a1f3c9.png',
-      status: '200 OK',
-      caption: 'Clipboard',
-      url: 'https://cdn.example.com/2026/08/a1f3c9.png',
+    requirements: 'macOS 13 or later, Apple Silicon. Free and open source.',
+    meta: ['macOS 13+', 'Apple Silicon', 'MIT licence'],
+    shot: {
+      alt: 'The Dropline window on macOS: a Cloudflare R2 host picker, a drop zone reading “Drop images, videos, or any file here”, and an upload queue where each finished file shows its public URL.',
     },
   },
   ways: {
@@ -382,19 +368,13 @@ const zh: Content = {
   hero: {
     badge: '原生 macOS 应用 · Swift + SwiftUI',
     title: '拖进去，链接就在剪贴板。',
-    lede: 'Dropline 待在你的菜单栏里，把图片、视频或任意文件发到你自己的 S3、R2 或图床 —— 拖一下、在访达里右键，或者丢到程序坞图标上。等你切回窗口，公开链接已经复制好了。',
+    lede: 'Dropline 待在你的菜单栏里。拖一下、在访达里右键，或者丢到程序坞图标上，文件就进了你自己的 S3、R2 或图床 —— 等你切回窗口，公开链接已经复制好了。',
     primary: '下载 macOS 版',
     secondary: '查看源码',
-    requirements: '需要 macOS 13 Ventura 及以上、Apple Silicon。完全免费且开源。',
-    meta: ['macOS 13+', 'Apple Silicon', '约 1 MB', 'MIT 协议'],
-    readout: {
-      file: 'screenshot-2026-08-08.png',
-      size: '2.4 MB',
-      verb: 'PUT',
-      key: 'assets/2026/08/a1f3c9.png',
-      status: '200 OK',
-      caption: '剪贴板',
-      url: 'https://cdn.example.com/2026/08/a1f3c9.png',
+    requirements: '需要 macOS 13 及以上、Apple Silicon。免费开源。',
+    meta: ['macOS 13+', 'Apple Silicon', 'MIT 协议'],
+    shot: {
+      alt: 'macOS 上的 Dropline 窗口：顶部选择 Cloudflare R2 图床，中间是「把图片、视频或任意文件拖到这里」的拖放区，下面的上传队列里每个完成的文件都带着自己的公开链接。',
     },
   },
   ways: {

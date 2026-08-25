@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
  * Motion for the landing page.
@@ -88,84 +88,60 @@ export function useReveal<T extends HTMLElement>() {
   return ref
 }
 
-/** One cycle of the hero's upload demo. */
-export interface UploadDemo {
-  /** 0 idle · 1 transferring · 2 responded · 3 copied */
-  phase: number
-  /** 0…1, drives the transfer bar */
-  progress: number
-  /** How much of the URL has been typed into the clipboard line */
-  typed: string
-}
-
-const TICK = 26
-const TYPE_MS = 20
-const HOLD_MS = 4200
-
 /**
- * The hero readout, animated: the file lands, the bytes go up, the host
- * answers, the link is typed onto the clipboard. Then it holds, and repeats.
+ * The hero screenshot's pointer tilt.
  *
- * It starts — and server-renders — in the *finished* state, which is what makes
- * it safe: the initial HTML shows a completed upload with the full URL, so
- * there is no layout shift on hydration and nothing to see if the animation
- * never runs.
+ * Writes two custom properties on the element the ref lands on; the transform
+ * that reads them lives in CSS, so the element is already in its resting state
+ * on the server and stays there for anyone on a coarse pointer, on a keyboard,
+ * or with reduced motion asked for. The angles are deliberately tiny — this is
+ * a sheet of glass catching the light, not a card game.
  */
-export function useUploadDemo(url: string): UploadDemo {
-  const [demo, setDemo] = useState<UploadDemo>({ phase: 3, progress: 1, typed: url })
+const TILT_DEG = 3.2
+
+export function useTilt<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
 
   useEffect(() => {
-    if (prefersReducedMotion()) return
+    const el = ref.current
+    if (!el) return
 
-    let cancelled = false
-    const timers = new Set<number>()
+    /* Fine pointers only: on a touch screen a `pointermove` is a tap, and the
+       tilt would land as a shove the reader never asked for. */
+    if (prefersReducedMotion() || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      return
+    }
 
-    function wait(ms: number) {
-      return new Promise<void>((resolve) => {
-        const timer = window.setTimeout(() => {
-          timers.delete(timer)
-          resolve()
-        }, ms)
-        timers.add(timer)
+    let frame = 0
+
+    function move(event: PointerEvent) {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        const box = el!.getBoundingClientRect()
+        const x = (event.clientX - box.left) / box.width - 0.5
+        const y = (event.clientY - box.top) / box.height - 0.5
+        el!.style.setProperty('--tilt-y', `${(x * TILT_DEG * 2).toFixed(2)}deg`)
+        el!.style.setProperty('--tilt-x', `${(-y * TILT_DEG * 2).toFixed(2)}deg`)
       })
     }
 
-    async function run() {
-      while (!cancelled) {
-        setDemo({ phase: 0, progress: 0, typed: '' })
-        await wait(700)
-        if (cancelled) return
-
-        /* Transfer. Eased so it starts quickly and settles — a linear bar reads
-           as a fake, because no real transfer is linear. */
-        for (let step = 1; step <= 36 && !cancelled; step += 1) {
-          const t = step / 36
-          setDemo({ phase: 1, progress: 1 - Math.pow(1 - t, 2.4), typed: '' })
-          await wait(TICK)
-        }
-        if (cancelled) return
-
-        setDemo({ phase: 2, progress: 1, typed: '' })
-        await wait(420)
-        if (cancelled) return
-
-        for (let at = 1; at <= url.length && !cancelled; at += 1) {
-          setDemo({ phase: 3, progress: 1, typed: url.slice(0, at) })
-          await wait(TYPE_MS)
-        }
-        if (cancelled) return
-
-        await wait(HOLD_MS)
-      }
+    function rest() {
+      if (frame) window.cancelAnimationFrame(frame)
+      frame = 0
+      el!.style.removeProperty('--tilt-x')
+      el!.style.removeProperty('--tilt-y')
     }
 
-    void run()
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerleave', rest)
 
     return () => {
-      cancelled = true
-      timers.forEach((timer) => window.clearTimeout(timer))
+      rest()
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerleave', rest)
     }
-  }, [url])
+  }, [])
 
-  return demo
+  return ref
 }

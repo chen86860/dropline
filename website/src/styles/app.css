@@ -1,5 +1,5 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Split Studio · theme: Cobalt
- * enrichment: none (typography only + Tier-A CSS readout) · nav: N13 inline ⌘K pill · footer: Ft1 mast-headed
+ * enrichment: none (typography only + the app window itself) · nav: N13 inline ⌘K pill · footer: Ft1 mast-headed
  * tone: technical · audience: macOS users who host their own files · anchor hue: 256 (electric cobalt)
  * axes · paper: cool light · display: grotesk-sans · accent: electric cobalt
  * pre-emit critique: P5 H5 E5 S5 R5 V4
@@ -208,14 +208,63 @@
     @apply border-accent text-accent;
   }
 
-  /* ── The hero readout's transfer bar ───────────────────────────── */
-  .transfer {
-    @apply h-px w-full overflow-hidden bg-graphite-rule;
+  /* ── The hero stage — the app window, floating ─────────────────────
+     The screenshot sits on the glass and the glow sits behind it. The shadow
+     is drawn with `drop-shadow` rather than `box-shadow` because the window's
+     rounded corners are cut into the image's alpha — a box shadow would trace
+     a rectangle the window doesn't have. */
+  .stage {
+    @apply relative;
+    /* Its own stacking context, so the glow's negative z stays above the
+       section's background instead of falling through it. */
+    isolation: isolate;
+    perspective: 1600px;
   }
 
-  .transfer__fill {
-    @apply block h-full bg-accent-soft;
-    transition: width var(--duration-micro) linear;
+  .stage__glow {
+    @apply pointer-events-none absolute;
+    inset: -12% -10% 6%;
+    z-index: -1;
+    background:
+      radial-gradient(58% 50% at 52% 38%, var(--color-accent-wash), transparent 72%),
+      radial-gradient(70% 60% at 30% 80%, oklch(94.2% 0.008 252 / 0.9), transparent 70%);
+    filter: blur(18px);
+  }
+
+  .stage__shot {
+    @apply block h-auto w-full;
+    transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-origin: 50% 60%;
+    transition: transform var(--duration-short) var(--ease-out);
+    filter: drop-shadow(0 1px 1px oklch(24% 0.02 258 / 0.1))
+      drop-shadow(0 14px 24px oklch(24% 0.02 258 / 0.12))
+      drop-shadow(0 44px 72px oklch(24% 0.02 258 / 0.18));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* The arrival — the window settles onto the page rather than flying in. */
+    .stage__shot {
+      animation: stage-settle var(--duration-long) var(--ease-out) backwards;
+    }
+
+    /* And then it breathes — 10px over 9s, far too slow to read as an
+       animation and just enough to keep the hero from feeling printed. */
+    .stage {
+      animation: stage-float 9s var(--ease-in-out) 1.2s infinite alternate;
+    }
+  }
+
+  @keyframes stage-settle {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0) scale(0.985);
+    }
+  }
+
+  @keyframes stage-float {
+    to {
+      transform: translate3d(0, -10px, 0);
+    }
   }
 }
 
