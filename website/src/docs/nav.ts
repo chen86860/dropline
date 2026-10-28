@@ -75,7 +75,7 @@ export const DOCS_UI: Record<
     search: string
     searchPlaceholder: string
     searchEmpty: string
-    searchHint: string
+    searchHint: string[]
     searchOpen: string
     breadcrumb: string
     notFoundTitle: string
@@ -99,7 +99,7 @@ export const DOCS_UI: Record<
     search: 'Search the docs',
     searchPlaceholder: 'Search the docs…',
     searchEmpty: 'Nothing matched that.',
-    searchHint: '↑↓ to move · ⏎ to open · esc to close',
+    searchHint: ['↑↓ to move', '⏎ to open', 'esc to close'],
     searchOpen: 'Search',
     breadcrumb: 'Breadcrumb',
     notFoundTitle: 'That page does not exist.',
@@ -123,7 +123,7 @@ export const DOCS_UI: Record<
     search: '搜索文档',
     searchPlaceholder: '搜索文档…',
     searchEmpty: '没有匹配的结果。',
-    searchHint: '↑↓ 切换 · ⏎ 打开 · esc 关闭',
+    searchHint: ['↑↓ 切换', '⏎ 打开', 'esc 关闭'],
     searchOpen: '搜索',
     breadcrumb: '面包屑导航',
     notFoundTitle: '这个页面不存在。',

@@ -7,7 +7,7 @@ import type { Doc, DocSet } from '../../docs/registry'
 import { DOCS_ROOT } from '../../docs/routes'
 import { useActiveHeading, useCodeCopy } from '../../lib/docs-client'
 import { AppLink } from '../../lib/links'
-import { ArrowIcon, ChevronIcon, CloseIcon, MenuIcon } from '../icons'
+import { ArrowIcon, ChevronIcon, MenuToggleIcon } from '../icons'
 import { SiteFooter } from '../SiteFooter'
 import { SHELL, SearchTrigger, SiteHeader, docsNavLinks } from '../SiteHeader'
 
@@ -52,12 +52,12 @@ export function DocsPage({ lang, docs, doc }: { lang: Lang; docs: DocSet; doc: D
         before={
           <button
             type="button"
-            className="-ml-1 inline-grid size-10 shrink-0 cursor-pointer place-items-center rounded-sm text-muted transition-colors duration-micro ease-out hover:text-ink lg:hidden"
+            className="-ml-1 inline-grid size-10 shrink-0 cursor-pointer place-items-center rounded-md text-muted transition-colors duration-micro ease-out hover:text-ink lg:hidden"
             aria-label={ui.menu}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
           >
-            {menuOpen ? <CloseIcon /> : <MenuIcon />}
+            <MenuToggleIcon open={menuOpen} />
           </button>
         }
       />
@@ -79,7 +79,7 @@ export function DocsPage({ lang, docs, doc }: { lang: Lang; docs: DocSet; doc: D
           </SidebarLink>
 
           {sidebar.map((group) => (
-            <div key={group.id} className="mt-7 first:mt-4">
+            <div key={group.id} className="mt-8 first:mt-4">
               <p className="mono-label mb-2">{group.label}</p>
               <ul className="border-l border-rule">
                 {group.items.map((item) => (
@@ -100,8 +100,8 @@ export function DocsPage({ lang, docs, doc }: { lang: Lang; docs: DocSet; doc: D
         </nav>
 
         {/* ── The page itself ─────────────────────────────────────────── */}
-        <main className="min-w-0 py-10 lg:py-14">
-          <nav aria-label={ui.breadcrumb} className="mb-6 flex flex-wrap items-center gap-1.5">
+        <main id="main" className="min-w-0 pt-10 pb-12 lg:pt-12 lg:pb-16">
+          <nav aria-label={ui.breadcrumb} className="mb-6 flex flex-wrap items-center gap-2">
             <AppLink
               href={DOCS_ROOT[lang]}
               className="mono-label transition-colors duration-micro ease-out hover:text-accent"
@@ -124,11 +124,11 @@ export function DocsPage({ lang, docs, doc }: { lang: Lang; docs: DocSet; doc: D
 
           {/* On-page rail, inline below the text where there is no third column */}
           {rail.length > 2 ? (
-            <details className="mt-12 rounded-md border border-rule bg-paper-2 p-4 xl:hidden">
+            <details className="mt-12 rounded-lg border border-rule bg-paper-2 p-4 xl:hidden">
               <summary className="mono-label cursor-pointer">{ui.onThisPage}</summary>
-              <ul className="mt-3 grid gap-1.5">
+              <ul className="mt-3 grid gap-2">
                 {rail.map((entry) => (
-                  <li key={entry.id} style={{ paddingInlineStart: entry.depth === 3 ? '1rem' : 0 }}>
+                  <li key={entry.id} className={entry.depth === 3 ? 'ps-4' : undefined}>
                     <a
                       href={`#${entry.id}`}
                       className="text-sm text-muted transition-colors duration-micro ease-out hover:text-accent"
@@ -164,10 +164,10 @@ export function DocsPage({ lang, docs, doc }: { lang: Lang; docs: DocSet; doc: D
         {rail.length > 2 ? (
           <aside
             aria-label={ui.onThisPage}
-            className="sticky top-[calc(var(--banner-height)+2.5rem)] hidden py-14 xl:block"
+            className="sticky top-[calc(var(--banner-height)+2.5rem)] hidden pt-12 pb-16 xl:block"
           >
             <p className="mono-label">{ui.onThisPage}</p>
-            <ul className="mt-3 grid gap-1.5 border-l border-rule">
+            <ul className="mt-3 grid gap-2 border-l border-rule">
               {rail.map((entry) => (
                 <li key={entry.id}>
                   <a
@@ -222,7 +222,7 @@ function SidebarLink({
       onClick={onNavigate}
       aria-current={current ? 'page' : undefined}
       className={[
-        'block py-1.5 text-sm transition-colors duration-micro ease-out',
+        'block py-2 text-sm transition-colors duration-micro ease-out',
         nested ? '-ml-px border-l-2 pl-3' : '',
         current
           ? nested
@@ -251,7 +251,7 @@ function Pager({
     <AppLink
       href={doc.href}
       className={[
-        'group grid gap-1 rounded-md border border-rule bg-paper-2 px-4 py-3',
+        'group grid gap-1 rounded-lg border border-rule bg-paper-2 px-4 py-3',
         'transition-colors duration-micro ease-out hover:border-accent',
         direction === 'next' ? 'text-right sm:col-start-2' : '',
       ].join(' ')}
@@ -271,7 +271,7 @@ export function DocsNotFound({ lang, docs }: { lang: Lang; docs: DocSet }) {
   return (
     <>
       <SiteHeader lang={lang} links={docsNavLinks(lang)} />
-      <main className={`${SHELL} grid place-items-start gap-6 py-28`}>
+      <main id="main" className={`${SHELL} grid place-items-start gap-6 pt-20 pb-24`}>
         <p className="mono-label">404</p>
         <h1 className="max-w-[18ch] text-3xl font-semibold">{ui.notFoundTitle}</h1>
         <p className="max-w-[60ch] text-md text-muted">{ui.notFoundBody}</p>

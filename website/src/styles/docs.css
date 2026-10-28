@@ -25,14 +25,14 @@
   }
 
   .doc-prose > h1 + p {
-    margin-top: --spacing(5);
+    margin-top: --spacing(6);
     font-size: var(--text-md);
     color: var(--color-muted);
     max-width: 62ch;
   }
 
   .doc-prose > h2 {
-    margin-top: --spacing(14);
+    margin-top: --spacing(16);
     padding-top: --spacing(6);
     border-top: 1px solid var(--color-rule);
     font-size: var(--text-xl);
@@ -40,14 +40,14 @@
   }
 
   .doc-prose > h3 {
-    margin-top: --spacing(9);
+    margin-top: --spacing(10);
     font-size: var(--text-md);
     font-weight: 600;
     letter-spacing: var(--tracking-tight);
   }
 
   .doc-prose > h4 {
-    margin-top: --spacing(7);
+    margin-top: --spacing(8);
     font-family: var(--font-body);
     font-size: var(--text-base);
     font-weight: 600;
@@ -83,7 +83,7 @@
 
   .doc-prose ul,
   .doc-prose ol {
-    padding-inline-start: --spacing(5);
+    padding-inline-start: --spacing(6);
     display: grid;
     gap: --spacing(2);
   }
@@ -123,9 +123,10 @@
   }
 
   .doc-prose blockquote {
-    padding: --spacing(4) --spacing(5);
-    border-inline-start: 2px solid var(--color-accent);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: --spacing(4) --spacing(6);
+    /* Bordered all the way round — a single-side rule reads as a stray line */
+    border: 1px solid var(--color-accent-line);
+    border-radius: var(--radius-lg);
     background: var(--color-accent-wash);
     color: var(--color-ink-2);
   }
@@ -147,7 +148,7 @@
   /* Inline code — a tint rather than a box, so a sentence stays a sentence. */
   .doc-prose :not(pre) > code {
     padding: 0.1em 0.35em;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--color-paper-3);
     color: var(--color-ink);
     font-family: var(--font-mono);
@@ -161,7 +162,7 @@
   /* ── Tables ───────────────────────────────────────────────────────── */
 
   .doc-table {
-    margin-top: --spacing(5);
+    margin-top: --spacing(6);
     overflow-x: auto;
     /* The page body must never scroll sideways; wide tables scroll themselves */
     max-width: 100%;
@@ -202,9 +203,9 @@
   /* ── Code blocks — the page's graphite beat ───────────────────────── */
 
   .doc-code {
-    margin: --spacing(5) 0 0;
+    margin: --spacing(6) 0 0;
     border: 1px solid var(--color-graphite-rule);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background: var(--color-graphite);
     overflow: hidden;
   }
@@ -229,9 +230,9 @@
   }
 
   .doc-code__copy {
-    padding: --spacing(1) --spacing(2.5);
+    padding: --spacing(1) --spacing(2);
     border: 1px solid var(--color-graphite-rule);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--color-graphite-muted);
     font-family: var(--font-mono);
@@ -254,7 +255,7 @@
 
   .doc-code__pre {
     margin: 0;
-    padding: --spacing(4) --spacing(5);
+    padding: --spacing(4) --spacing(6);
     overflow-x: auto;
     font-family: var(--font-mono);
     font-size: var(--text-xs);

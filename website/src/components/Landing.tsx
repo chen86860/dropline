@@ -1,25 +1,45 @@
-import { AppleIcon, ArrowIcon, BookIcon } from './icons'
+import { FlowDiagram } from './FlowDiagram'
+import { HeroBackdrop } from './HeroBackdrop'
+import { HeroDemo } from './HeroDemo'
+import { TemplateResolver } from './TemplateResolver'
+import { AppleIcon, ArrowIcon, BookIcon, DocIcon } from './icons'
 import { Reveal } from './Reveal'
 import { SiteFooter } from './SiteFooter'
 import { SHELL, SiteHeader } from './SiteHeader'
-import { CONTENT, DOWNLOAD_DMG, REPO, type Lang } from '../content'
+import { CONTENT, DOWNLOAD_DMG, type Lang } from '../content'
 import { docHref } from '../docs/routes'
 import { AppLink } from '../lib/links'
-import { useTilt } from '../lib/motion'
 
 /** Split Studio: text half and proof half, and the pairing flips down the page. */
 const SPLIT = 'grid grid-cols-[minmax(0,1fr)] gap-10 xl:gap-24 xl:items-center'
 const SPLIT_LEFT = `${SPLIT} xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]`
 const SPLIT_RIGHT = `${SPLIT} xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]`
 
-const SECTION = 'border-t border-rule py-24'
+/* Bottom padding a step deeper than the top — optically, that reads as even */
+const SECTION = 'border-t border-rule pt-20 pb-24'
+/* Every band below the hero shares one floor height, content centred in it,
+   so the page scrolls in an even rhythm. */
+const BAND = 'min-h-160'
+const BAND_STACK = `${BAND} flex flex-col justify-center`
+
+/* Each preset's own mark, from Simple Icons / Iconify brand sets or the
+   project's site. SM.MS and EasyImage publish no usable icon, so they keep
+   the letter. */
+const HOST_ICONS: Record<string, string> = {
+  'hosts/s3': '/hosts/s3.svg',
+  'hosts/r2': '/hosts/r2.svg',
+  'hosts/oss': '/hosts/oss.svg',
+  'hosts/cos': '/hosts/cos.svg',
+  'hosts/minio': '/hosts/minio.svg',
+  'hosts/imgur': '/hosts/imgur.svg',
+  'hosts/lsky-chevereto': '/hosts/lsky.png',
+}
 const HEAD_TITLE = 'text-3xl font-semibold'
 const LEDE = 'max-w-[60ch] text-md text-muted'
 
-/* Same 5/7 diptych, but deliberately without `items-center`: the head column
-   must stretch or its sticky wrapper has no distance to travel. */
-const SPLIT_FAQ =
-  'grid grid-cols-[minmax(0,1fr)] gap-10 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] xl:gap-24'
+/* The quieter ask beside a primary button — a link, not a second button */
+const TEXT_LINK =
+  'inline-flex min-h-10 items-center gap-2 text-base font-medium text-ink-2 transition-colors duration-micro ease-out hover:text-accent'
 
 export function Landing({ lang }: { lang: Lang }) {
   const t = CONTENT[lang]
@@ -28,41 +48,37 @@ export function Landing({ lang }: { lang: Lang }) {
     <>
       <SiteHeader lang={lang} />
 
-      <main>
-        {/* ── Hero — H2 diptych: statement left, the app itself right ──── */}
-        <section className={`${SHELL} ${SPLIT_LEFT} pt-24 pb-16`}>
+      <main id="main">
+        {/* ── Hero — H2 diptych: statement left, the upload playing out right */}
+        <section className="relative isolate -mt-(--banner-height) flex min-h-dvh flex-col justify-center pt-(--banner-height)">
+          <HeroBackdrop />
+          <div className={`${SHELL} ${SPLIT_LEFT} pt-16 pb-24`}>
           <div>
-            <p className="inline-flex items-center gap-2 rounded-sm border border-rule bg-paper-2 px-3 py-1.5 font-mono text-2xs tracking-mono text-muted">
+            <p className="inline-flex items-center gap-3 rounded-sm border border-rule bg-paper-2 px-3 py-1 font-mono text-2xs tracking-mono text-muted">
               <AppleIcon className="size-3.5 text-ink" />
-              {t.hero.badge}
+              {t.hero.badge.map((part) => (
+                <span key={part}>{part}</span>
+              ))}
             </p>
 
             {/* Balanced wrapping keeps the headline from stranding a single
                 glyph on its own line — CJK breaks anywhere, so it needs help. */}
-            <h1 className="mt-5 text-balance text-display font-semibold">{t.hero.title}</h1>
+            <h1 className="hero-title mt-6 text-balance text-display font-semibold">{t.hero.title}</h1>
             <p className="mt-6 max-w-[46ch] text-md text-muted">{t.hero.lede}</p>
 
-            <div className="mt-10 flex flex-wrap gap-3">
+            {/* One button; the docs are a link beside it */}
+            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
               <a className="btn btn-primary" href={DOWNLOAD_DMG} rel="noopener">
                 <AppleIcon />
                 {t.hero.primary}
               </a>
-              <AppLink className="btn btn-secondary" href={docHref(lang, '')}>
+              <AppLink className={TEXT_LINK} href={docHref(lang, '')}>
                 <BookIcon />
                 {t.docsBand.cta}
               </AppLink>
-              <a
-                className="inline-flex min-h-11 items-center px-2 text-base text-muted transition-colors duration-micro ease-out hover:text-accent"
-                href={REPO}
-                rel="noopener"
-              >
-                {t.hero.secondary}
-              </a>
             </div>
 
-            <p className="mt-4 max-w-[46ch] text-sm text-muted">{t.hero.requirements}</p>
-
-            <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-2">
+            <ul className="mt-8 flex flex-wrap gap-x-4 gap-y-2">
               {t.hero.meta.map((item) => (
                 <li key={item} className="mono-label">
                   {item}
@@ -71,174 +87,139 @@ export function Landing({ lang }: { lang: Lang }) {
             </ul>
           </div>
 
-          <Showcase shot={t.hero.shot} />
-        </section>
-
-        {/* ── The hosts, moving past ─────────────────────────────────────
-            A quiet strip rather than a section: it answers "does it work with
-            mine?" before the reader has to go looking, and every name is a
-            real link into that host's configuration page. */}
-        <section className="border-y border-rule bg-paper-2 py-5" aria-label={t.hosts.presetsLabel}>
-          <div className="marquee">
-            {[0, 1].map((track) => (
-              <ul
-                key={track}
-                className="marquee__track"
-                /* The duplicate exists only to make the loop seamless; a screen
-                   reader should meet this list once. */
-                aria-hidden={track === 1 ? 'true' : undefined}
-              >
-                {t.hosts.presets.map((preset) => (
-                  <li key={preset.slug}>
-                    <AppLink className="chip" href={docHref(lang, preset.slug)}>
-                      {preset.label}
-                    </AppLink>
-                  </li>
-                ))}
-                {t.hosts.engines.map(([engine]) => (
-                  <li key={engine}>
-                    <span className="chip text-muted">{engine}</span>
-                  </li>
-                ))}
-              </ul>
-            ))}
+          <HeroDemo labels={t.hero.demo} />
           </div>
         </section>
 
-        {/* ── Five ways in — the diptych flips ──────────────────────────── */}
-        <section id={t.ways.id} className={`${SHELL} ${SECTION} ${SPLIT_RIGHT}`}>
-          {/* Heading first in the DOM so stacked mobile reads head → proof;
+        {/* ── Hosts — two rows drifting in opposite directions, the presets
+              above and what the custom engines speak below. Every preset is
+              a link into its configuration page. ───────────────────────── */}
+        <section id={t.hosts.id} className={`dots-bg relative isolate border-y border-rule bg-paper-2 pt-20 pb-24 ${BAND_STACK}`}>
+          <Reveal className={SHELL}>
+            <h2 className={`${HEAD_TITLE} max-w-[18ch]`}>{t.hosts.title}</h2>
+            <p className={`${LEDE} mt-4`}>{t.hosts.lede}</p>
+          </Reveal>
+
+          <div className="mt-12 grid gap-3" aria-label={t.hosts.presetsLabel}>
+            <div className="marquee">
+              {[0, 1].map((track) => (
+                <ul
+                  key={track}
+                  className="marquee__track"
+                  /* The duplicate exists only to make the loop seamless; a
+                     screen reader should meet this list once. */
+                  aria-hidden={track === 1 ? 'true' : undefined}
+                >
+                  {t.hosts.presets.map((preset) => (
+                    <li key={preset.slug}>
+                      <AppLink
+                        className="host-tile"
+                        href={docHref(lang, preset.slug)}
+                        tabIndex={track === 1 ? -1 : undefined}
+                      >
+                        <span className="host-tile__mark">
+                          {HOST_ICONS[preset.slug] ? (
+                            <img src={HOST_ICONS[preset.slug]} alt="" className="size-5 object-contain" />
+                          ) : (
+                            preset.label.slice(0, 1)
+                          )}
+                        </span>
+                        {preset.label}
+                      </AppLink>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+
+            <div className="marquee" aria-hidden="true">
+              {[0, 1].map((track) => (
+                <ul key={track} className="marquee__track marquee__track--reverse">
+                  {t.hosts.engines.map((engine) => (
+                    <li key={engine}>
+                      <span className="chip">{engine}</span>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          </div>
+
+          <div className={`${SHELL} mt-10`}>
+            <AppLink
+              className="inline-flex items-center gap-2 text-sm font-medium text-accent transition-colors duration-micro ease-out hover:text-accent-deep"
+              href={docHref(lang, 'hosts/overview')}
+            >
+              {t.hosts.presetsCta}
+            </AppLink>
+          </div>
+        </section>
+
+        {/* ── Five ways in — the diagram on the wide side, the diptych flips ── */}
+        <section id={t.ways.id} className={`${SHELL} ${SECTION} ${SPLIT_LEFT} ${BAND} content-center`}>
+          {/* Text first in the DOM so stacked mobile reads head → proof;
               the diptych only flips where there are two columns to flip. */}
           <Reveal className="xl:order-2">
             <h2 className={`${HEAD_TITLE} max-w-[16ch]`}>{t.ways.title}</h2>
             <p className={`${LEDE} mt-4`}>{t.ways.lede}</p>
-            <p className={`${LEDE} mt-6`}>{t.ways.note}</p>
+
+            <ul className="mt-8 border-t border-rule">
+              {t.ways.items.map((item) => (
+                <li
+                  key={item.key}
+                  className="grid grid-cols-[6rem_minmax(0,1fr)] items-baseline gap-4 border-b border-rule py-3"
+                >
+                  <span className="font-mono text-2xs tracking-mono text-accent uppercase">
+                    {item.key}
+                  </span>
+                  <span className="text-base text-ink-2">{item.desc}</span>
+                </li>
+              ))}
+            </ul>
           </Reveal>
 
-          <ul className="border-t border-rule xl:order-1">
-            {t.ways.items.map((item, index) => (
-              <Reveal
-                as="li"
-                key={item.key}
-                delay={index * 70}
-                className="group grid grid-cols-[minmax(0,1fr)] gap-1 border-b border-rule py-4 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-baseline sm:gap-4"
-              >
-                <span className="font-mono text-2xs tracking-mono text-accent uppercase">
-                  {item.key}
-                </span>
-                <span className="text-base text-ink-2">{item.desc}</span>
-              </Reveal>
-            ))}
-          </ul>
+          <Reveal step={1} className="xl:order-1">
+            <FlowDiagram inputs={t.ways.items.map((item) => item.key)} output={t.ways.output} />
+          </Reveal>
         </section>
 
         {/* ── The page's one dark beat ──────────────────────────────────── */}
-        <section id={t.own.id} className="bg-graphite py-24 text-graphite-muted">
+        <section
+          id={t.own.id}
+          className={`grain relative isolate overflow-hidden bg-graphite pt-20 pb-24 text-graphite-muted ${BAND_STACK}`}
+        >
           <div className={`${SHELL} ${SPLIT_LEFT}`}>
             <Reveal>
               <h2 className={`${HEAD_TITLE} max-w-[18ch] text-graphite-ink`}>{t.own.title}</h2>
               <p className="mt-4 max-w-[60ch] text-md text-graphite-muted">{t.own.lede}</p>
 
-              <div className="mt-10 grid gap-6">
-                {t.own.points.map((point) => (
-                  <div key={point.title}>
-                    <h3 className="text-md font-medium tracking-tight text-graphite-ink">
-                      {point.title}
-                    </h3>
-                    <p className="mt-1 max-w-[60ch] text-base">{point.body}</p>
-                  </div>
-                ))}
+              {/* Two ends and nothing between them */}
+              <div className="mt-10 flex items-center gap-3 font-mono text-xs" aria-hidden="true">
+                <span className="rounded-md border border-graphite-rule px-3 py-2 text-graphite-ink">
+                  {t.own.route[0]}
+                </span>
+                <span className="route-line" />
+                <span className="rounded-md border border-accent-soft px-3 py-2 text-accent-soft">
+                  {t.own.route[1]}
+                </span>
               </div>
             </Reveal>
 
-            <Reveal
-              delay={120}
-              className="grid gap-4 rounded-md border border-graphite-rule bg-graphite-2 p-6 font-mono text-xs"
-            >
-              <div className="grid gap-1">
-                <span className="mono-label text-graphite-muted">{t.own.templateKeyLabel}</span>
-                <span className="break-anywhere text-graphite-ink">{t.own.templateKey}</span>
-              </div>
-              <div className="grid gap-1">
-                <span className="mono-label text-graphite-muted">{t.own.templateUrlLabel}</span>
-                <span className="break-anywhere text-graphite-ink">{t.own.templateUrl}</span>
-              </div>
-              <div className="grid gap-2 border-t border-graphite-rule pt-4">
-                <span className="mono-label text-graphite-muted">{t.own.varsLabel}</span>
-                <ul className="flex flex-wrap gap-1">
-                  {t.own.vars.map((name) => (
-                    <li
-                      key={name}
-                      className="rounded-[4px] border border-graphite-rule px-2 py-0.5 text-2xs whitespace-nowrap text-graphite-muted"
-                    >
-                      {name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            <Reveal step={1}>
+              <TemplateResolver
+                keyLabel={t.own.templateKeyLabel}
+                keyTemplate={t.own.templateKey}
+                urlLabel={t.own.templateUrlLabel}
+                urlTemplate={t.own.templateUrl}
+                varsLabel={t.own.varsLabel}
+                vars={t.own.vars}
+              />
             </Reveal>
           </div>
         </section>
 
-        {/* ── Hosts and engines — F3 spec sheet ─────────────────────────── */}
-        <section id={t.hosts.id} className={`${SHELL} ${SECTION} ${SPLIT_LEFT}`}>
-          <Reveal>
-            <h2 className={`${HEAD_TITLE} max-w-[18ch]`}>{t.hosts.title}</h2>
-            <p className={`${LEDE} mt-4`}>{t.hosts.lede}</p>
-
-            <p className="mono-label mt-10">{t.hosts.presetsLabel}</p>
-            <ul className="mt-4 flex flex-wrap gap-1.5">
-              {t.hosts.presets.map((preset) => (
-                <li key={preset.slug}>
-                  <AppLink className="chip" href={docHref(lang, preset.slug)}>
-                    {preset.label}
-                  </AppLink>
-                </li>
-              ))}
-            </ul>
-
-            <AppLink
-              className="mt-5 inline-flex items-center gap-2 text-sm text-accent transition-colors duration-micro ease-out hover:text-accent-deep"
-              href={docHref(lang, 'hosts/overview')}
-            >
-              {t.hosts.presetsCta}
-            </AppLink>
-          </Reveal>
-
-          <Reveal delay={120}>
-            <table className="tnum w-full border-collapse text-left">
-              <caption className="mono-label pb-3 text-left">{t.hosts.enginesCaption}</caption>
-              <thead className="sr-only">
-                <tr>
-                  <th scope="col">{t.hosts.engineHead[0]}</th>
-                  <th scope="col">{t.hosts.engineHead[1]}</th>
-                </tr>
-              </thead>
-              <tbody className="max-md:block">
-                {[
-                  ...t.hosts.engines,
-                  [t.hosts.authLabel, t.hosts.auth] as [string, string],
-                ].map(([engine, use]) => (
-                  <tr key={engine} className="border-b border-rule max-md:block max-md:py-4">
-                    <th
-                      scope="row"
-                      className="break-anywhere py-4 pr-4 align-baseline font-mono text-xs font-medium text-ink max-md:block max-md:py-0"
-                    >
-                      {engine}
-                    </th>
-                    <td className="py-4 align-baseline text-base text-muted max-md:mt-1 max-md:block max-md:py-0">
-                      {use}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className={`${LEDE} mt-6`}>{t.hosts.custom}</p>
-          </Reveal>
-        </section>
-
         {/* ── Docs — the handover from page to manual ───────────────────── */}
-        <section id={t.docsBand.id} className={`${SHELL} ${SECTION}`}>
+        <section id={t.docsBand.id} className={`${SHELL} ${SECTION} ${BAND_STACK}`}>
           <Reveal>
             <p className="mono-label">{t.docsBand.eyebrow}</p>
             <h2 className={`${HEAD_TITLE} mt-3 max-w-[16ch]`}>{t.docsBand.title}</h2>
@@ -247,11 +228,14 @@ export function Landing({ lang }: { lang: Lang }) {
 
           <ul className="mt-10 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {t.docsBand.cards.map((card, index) => (
-              <Reveal as="li" key={card.slug} delay={index * 70}>
+              <Reveal as="li" key={card.slug} step={index}>
                 <AppLink
                   href={docHref(lang, card.slug)}
-                  className="group flex h-full flex-col gap-2 rounded-md border border-rule bg-paper-2 p-5 transition-colors duration-short ease-out hover:border-accent hover:bg-paper"
+                  className="group flex h-full flex-col gap-2 rounded-lg border border-rule bg-paper-2 p-6 transition duration-micro ease-out hover:-translate-y-0.5 hover:border-accent hover:bg-paper hover:shadow-lift"
                 >
+                  <span className="mb-4 grid size-10 place-items-center rounded-lg bg-accent-wash text-accent">
+                    <DocIcon slug={card.slug} className="size-5" />
+                  </span>
                   <span className="flex items-center gap-2 text-md font-medium text-ink transition-colors duration-micro ease-out group-hover:text-accent">
                     {card.title}
                     <ArrowIcon className="-translate-x-1 opacity-0 transition duration-short ease-out group-hover:translate-x-0 group-hover:opacity-100" />
@@ -263,38 +247,29 @@ export function Landing({ lang }: { lang: Lang }) {
           </ul>
         </section>
 
-        {/* ── FAQ — real <details>, so answers are in the DOM for crawlers
-              whether or not the visitor opens them ─────────────────────── */}
-        <section id={t.faq.id} className={`${SHELL} ${SECTION} ${SPLIT_FAQ}`}>
-          {/* Pinned beside a tall list so the reader keeps their place. The
-              grid item has to stretch for sticky to have any travel, hence the
-              wrapper. It docks below the nav and carries no z-index, so the
-              nav's own layer stays on top while scrolling. */}
-          <div>
-            <div className="xl:sticky xl:top-[calc(var(--banner-height)+2.5rem)]">
-              <h2 className={`${HEAD_TITLE} max-w-[16ch]`}>{t.faq.title}</h2>
-              <p className={`${LEDE} mt-4`}>{t.faq.lede}</p>
-            </div>
-          </div>
+        {/* ── FAQ — every answer on the page, two columns, nothing to open:
+              readers scan it and crawlers read it ─────────────────────── */}
+        <section id={t.faq.id} className={`${SHELL} ${SECTION} ${BAND_STACK}`}>
+          <Reveal>
+            <h2 className={`${HEAD_TITLE} max-w-[16ch]`}>{t.faq.title}</h2>
+            <p className={`${LEDE} mt-4`}>{t.faq.lede}</p>
+          </Reveal>
 
-          <div className="border-t border-rule">
+          <dl className="mt-8 grid gap-x-16 gap-y-8 border-t border-rule pt-8 lg:grid-cols-2">
             {t.faq.items.map((item) => (
-              <details key={item.q} className="faq border-b border-rule">
-                <summary className="flex min-h-14 cursor-pointer list-none items-center gap-4 py-4 text-md font-medium text-ink transition-colors duration-micro ease-out hover:text-accent">
-                  <span className="flex-1">{item.q}</span>
-                  <span className="faq__mark" aria-hidden="true" />
-                </summary>
-                <p className="max-w-[68ch] pb-5 text-base text-muted">{item.a}</p>
-              </details>
+              <div key={item.q}>
+                <dt className="text-md font-medium tracking-tight text-ink">{item.q}</dt>
+                <dd className="mt-2 max-w-[65ch] text-base text-muted">{item.a}</dd>
+              </div>
             ))}
-          </div>
+          </dl>
         </section>
 
         {/* ── Install — one button, no second ask ───────────────────────── */}
-        <section
-          id={t.install.id}
-          className={`${SHELL} ${SPLIT_RIGHT} border-t border-rule pt-36 pb-24`}
-        >
+        {/* The page ends on the same ground it started on */}
+        <section id={t.install.id} className={`relative isolate border-t border-rule pt-20 pb-24 ${BAND_STACK}`}>
+          <HeroBackdrop />
+          <div className={`${SHELL} ${SPLIT_RIGHT}`}>
           <Reveal className="xl:order-2">
             <h2 className={`${HEAD_TITLE} max-w-[16ch]`}>{t.install.title}</h2>
             <p className={`${LEDE} mt-4`}>{t.install.lede}</p>
@@ -305,19 +280,21 @@ export function Landing({ lang }: { lang: Lang }) {
                 {t.install.cta}
                 <ArrowIcon />
               </a>
-              <p className="mono-label">{t.install.ctaMeta}</p>
+              <p className="mono-label flex flex-wrap gap-x-4 gap-y-1">
+                {t.install.ctaMeta.map((part) => (
+                  <span key={part}>{part}</span>
+                ))}
+              </p>
 
               {/* Homebrew — the second path, deliberately quieter than the button */}
               <div className="mt-6 grid w-full justify-items-start gap-2">
                 <p className="mono-label">{t.install.brew.label}</p>
-                <code className="break-anywhere block w-full rounded-sm border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
+                <code className="break-anywhere block w-full rounded-md border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
+                  <span className="text-neutral select-none">$ </span>
                   {t.install.brew.command}
+                  <span className="caret" aria-hidden="true" />
                 </code>
-                <p className="max-w-[60ch] text-sm text-muted">{t.install.brew.note}</p>
               </div>
-
-              <p className="mt-3 max-w-[60ch] text-sm text-muted">{t.install.note}</p>
-              <p className="max-w-[60ch] text-sm text-muted">{t.install.source}</p>
             </div>
           </Reveal>
 
@@ -326,17 +303,17 @@ export function Landing({ lang }: { lang: Lang }) {
               <Reveal
                 as="li"
                 key={step.title}
-                delay={index * 90}
-                className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-4"
+                step={index}
+                className="grid grid-cols-[2rem_minmax(0,1fr)] gap-4"
               >
-                <span className="pt-[0.35em] font-mono text-2xs tracking-mono text-accent">
+                <span className="pt-1 font-mono text-2xs tracking-mono text-accent">
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 <div>
                   <h3 className="text-md font-medium tracking-tight">{step.title}</h3>
                   <p className="mt-1 max-w-[60ch] text-muted">{step.body}</p>
                   {step.code ? (
-                    <code className="break-anywhere mt-3 block rounded-sm border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
+                    <code className="break-anywhere mt-3 block rounded-md border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
                       {step.code}
                     </code>
                   ) : null}
@@ -344,6 +321,7 @@ export function Landing({ lang }: { lang: Lang }) {
               </Reveal>
             ))}
           </ol>
+          </div>
         </section>
       </main>
 
@@ -352,38 +330,3 @@ export function Landing({ lang }: { lang: Lang }) {
   )
 }
 
-/**
- * The hero's proof half: the app itself, floating.
- *
- * The screenshot is the product — no mock chrome around it, because it already
- * has its own. The stage carries the perspective for the pointer tilt and the
- * ambient glow behind the glass.
- *
- * All of the motion is enhancement: the shot is a plain `<img>` with its
- * intrinsic size declared, so it reserves its own space and is finished before
- * any script runs.
- */
-function Showcase({ shot }: { shot: (typeof CONTENT)['en']['hero']['shot'] }) {
-  const stage = useTilt<HTMLDivElement>()
-
-  return (
-    <div ref={stage} className="stage">
-      <span className="stage__glow" aria-hidden="true" />
-
-      <picture>
-        <source srcSet="/dropline-app.webp" type="image/webp" />
-        <img
-          className="stage__shot"
-          src="/dropline-app.png"
-          width={1156}
-          height={1184}
-          alt={shot.alt}
-          /* Above the fold on every viewport — never defer it. */
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-        />
-      </picture>
-    </div>
-  )
-}

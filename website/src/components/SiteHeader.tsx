@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useRouterState } from '@tanstack/react-router'
 
-import { AppIcon, AppleIcon, SearchIcon } from './icons'
+import { AppIcon, AppleIcon, MenuToggleIcon, SearchIcon } from './icons'
 import { AppLink } from '../lib/links'
 import { CONTENT, DOWNLOAD_DMG, LANGS, PATH_FOR, REPO, type Lang } from '../content'
 import { DOCS_ROOT } from '../docs/routes'
@@ -10,7 +11,7 @@ const LANG_NAME: Record<Lang, string> = { en: 'EN', zh: '中文' }
 
 /** One measure for the whole site: the landing page and the docs share it, so
     navigating between them never shifts the content edges. */
-export const SHELL = 'mx-auto w-full max-w-wide px-[clamp(1.125rem,4vw,3rem)]'
+export const SHELL = 'mx-auto w-full max-w-wide px-4 sm:px-6 xl:px-12'
 
 /**
  * One header for the whole site.
@@ -39,84 +40,171 @@ export function SiteHeader({
   const t = CONTENT[lang]
   const navLinks = links ?? t.nav.links
   const target = langHref ?? PATH_FOR
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+
+  /* Pages with their own leading control (the docs sidebar toggle) bring
+     their own small-screen navigation; everything else gets this menu. */
+  const [menuOpen, setMenuOpen] = useState(false)
+  const hasMenu = !before
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+    window.addEventListener('keydown', close)
+    return () => window.removeEventListener('keydown', close)
+  }, [menuOpen])
+
+  /** A route link is current when the reader is on it or inside it. */
+  const isCurrent = (href: string) =>
+    !href.startsWith('#') &&
+    !href.startsWith('http') &&
+    href !== PATH_FOR[lang] &&
+    (pathname === href || pathname.startsWith(`${href}/`))
 
   return (
-    <header className="sticky top-0 z-nav border-b border-rule bg-paper/85 backdrop-blur-[10px]">
-      <div
-        className={`${SHELL} flex min-h-[60px] items-center gap-3 xl:min-h-[68px]`}
-      >
-        {before}
+    <header className="sticky top-0 z-nav pt-3">
+      <div className={SHELL}>
+        {/* Floats just off the top edge; at full width it shrinks to its
+            contents, below that it spans the gutter. */}
+        <div className="mx-auto flex min-h-14 w-full items-center gap-3 rounded-xl border border-rule bg-paper/80 px-3 shadow-whisper backdrop-blur-md xl:w-fit xl:gap-4">
+          {before}
 
-        <a
-          href={PATH_FOR[lang]}
-          className="mr-auto inline-flex items-center gap-2 font-display text-md font-semibold tracking-display whitespace-nowrap text-ink"
-        >
-          <AppIcon className="size-5" />
-          Dropline
-        </a>
+          <a
+            href={PATH_FOR[lang]}
+            className="mr-auto inline-flex items-center gap-2 font-display text-md font-semibold tracking-display whitespace-nowrap text-ink xl:mr-4"
+          >
+            <AppIcon className="size-6" />
+            Dropline
+          </a>
 
-        <nav className="mr-2 hidden items-center gap-6 xl:flex" aria-label={t.nav.navLabel}>
-          {navLinks.map((link) =>
-            link.href.startsWith('#') || link.href.startsWith('http') ? (
-              <a
-                key={link.href}
-                href={link.href}
-                rel={link.href.startsWith('http') ? 'noopener' : undefined}
-                className="py-2 text-sm whitespace-nowrap text-muted transition-colors duration-micro ease-out hover:text-ink"
-              >
+          <nav className="mr-2 hidden items-center gap-6 xl:flex" aria-label={t.nav.navLabel}>
+            {navLinks.map((link) => (
+              <NavLink key={link.href} href={link.href} current={isCurrent(link.href)}>
                 {link.label}
-              </a>
-            ) : (
+              </NavLink>
+            ))}
+          </nav>
+
+          {slot}
+
+          <div
+            className="inline-flex shrink-0 overflow-hidden rounded-md border border-rule"
+            role="group"
+            aria-label={t.nav.langLabel}
+          >
+            {LANGS.map((code, index) => (
               <AppLink
-                key={link.href}
-                href={link.href}
-                className="py-2 text-sm whitespace-nowrap text-muted transition-colors duration-micro ease-out hover:text-ink"
+                key={code}
+                href={target[code]}
+                hrefLang={code === 'zh' ? 'zh-Hans' : 'en'}
+                aria-current={code === lang ? 'true' : undefined}
+                onClick={() => rememberLang(code)}
+                className={[
+                  'inline-grid min-h-10 min-w-10 place-items-center px-2 font-mono text-2xs tracking-mono whitespace-nowrap',
+                  'transition-colors duration-micro ease-out',
+                  index > 0 ? 'border-l border-rule' : '',
+                  code === lang ? 'bg-accent-wash text-accent-deep' : 'text-muted hover:text-ink',
+                ].join(' ')}
               >
-                {link.label}
+                {LANG_NAME[code]}
               </AppLink>
-            ),
-          )}
-        </nav>
+            ))}
+          </div>
 
-        {slot}
+          {/* Below 30rem the label is dropped rather than allowed to wrap or push
+              the bar past the viewport — the Apple mark carries it. */}
+          <a
+            className="btn btn-primary shrink-0 text-sm"
+            href={DOWNLOAD_DMG}
+            rel="noopener"
+            aria-label={t.nav.download}
+          >
+            <AppleIcon />
+            <span className="max-sm:sr-only">{t.nav.download}</span>
+          </a>
 
-        <div
-          className="inline-flex shrink-0 overflow-hidden rounded-sm border border-rule"
-          role="group"
-          aria-label={t.nav.langLabel}
-        >
-          {LANGS.map((code, index) => (
-            <AppLink
-              key={code}
-              href={target[code]}
-              hrefLang={code === 'zh' ? 'zh-Hans' : 'en'}
-              aria-current={code === lang ? 'true' : undefined}
-              onClick={() => rememberLang(code)}
-              className={[
-                'inline-grid min-h-10 min-w-10 place-items-center px-2 font-mono text-2xs tracking-mono whitespace-nowrap',
-                'transition-colors duration-micro ease-out',
-                index > 0 ? 'border-l border-rule' : '',
-                code === lang ? 'bg-accent-wash text-accent-deep' : 'text-muted hover:text-ink',
-              ].join(' ')}
+          {hasMenu ? (
+            <button
+              type="button"
+              className="-mr-1 inline-grid size-10 shrink-0 cursor-pointer place-items-center rounded-md text-muted transition-colors duration-micro ease-out hover:text-ink xl:hidden"
+              aria-label={t.nav.navLabel}
+              aria-expanded={menuOpen}
+              aria-controls="site-menu"
+              onClick={() => setMenuOpen((open) => !open)}
             >
-              {LANG_NAME[code]}
-            </AppLink>
-          ))}
+              <MenuToggleIcon open={menuOpen} />
+            </button>
+          ) : null}
         </div>
-
-        {/* Below 30rem the label is dropped rather than allowed to wrap or push
-            the bar past the viewport — the Apple mark carries it. */}
-        <a
-          className="btn btn-primary min-h-10 shrink-0 px-3 text-sm sm:px-4"
-          href={DOWNLOAD_DMG}
-          rel="noopener"
-          aria-label={t.nav.download}
-        >
-          <AppleIcon />
-          <span className="max-sm:sr-only">{t.nav.download}</span>
-        </a>
       </div>
+
+      {hasMenu ? (
+        <nav
+          id="site-menu"
+          aria-label={t.nav.navLabel}
+          data-open={menuOpen ? '' : undefined}
+          inert={!menuOpen}
+          className="mobile-menu fixed inset-x-0 top-(--banner-height) bottom-0 bg-paper xl:hidden"
+        >
+          <ul className={`${SHELL} grid gap-2 pt-8`}>
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <NavLink
+                  href={link.href}
+                  current={isCurrent(link.href)}
+                  onClick={() => setMenuOpen(false)}
+                  large
+                >
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
     </header>
+  )
+}
+
+function NavLink({
+  href,
+  current,
+  large = false,
+  onClick,
+  children,
+}: {
+  href: string
+  current: boolean
+  large?: boolean
+  onClick?: () => void
+  children: ReactNode
+}) {
+  const className = [
+    'whitespace-nowrap transition-colors duration-micro ease-out',
+    large ? 'block border-b border-rule py-4 font-display text-2xl font-semibold' : 'py-2 text-sm',
+    current ? 'font-medium text-ink' : large ? 'text-ink-2 hover:text-accent' : 'text-muted hover:text-ink',
+  ].join(' ')
+
+  return href.startsWith('#') || href.startsWith('http') ? (
+    <a
+      href={href}
+      rel={href.startsWith('http') ? 'noopener' : undefined}
+      className={className}
+      onClick={onClick}
+    >
+      {children}
+    </a>
+  ) : (
+    <AppLink
+      href={href}
+      className={className}
+      aria-current={current ? 'page' : undefined}
+      onClick={onClick}
+    >
+      {children}
+    </AppLink>
   )
 }
 
@@ -133,11 +221,11 @@ export function SearchTrigger({
       type="button"
       onClick={onOpen}
       aria-label={label}
-      className="mr-1 inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-sm border border-rule bg-paper-2 px-3 text-sm text-muted transition-colors duration-micro ease-out hover:border-rule-2 hover:text-ink"
+      className="mr-1 inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-md border border-rule bg-paper-2 px-3 text-sm text-muted transition-colors duration-micro ease-out hover:border-rule-2 hover:text-ink"
     >
       <SearchIcon />
       <span className="max-lg:sr-only">{label}</span>
-      <kbd className="ml-2 hidden rounded-[4px] border border-rule bg-paper px-1.5 font-mono text-2xs text-neutral lg:inline-block">
+      <kbd className="ml-2 hidden rounded-sm border border-rule bg-paper px-2 font-mono text-2xs text-neutral lg:inline-block">
         ⌘K
       </kbd>
     </button>

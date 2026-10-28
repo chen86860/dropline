@@ -56,19 +56,24 @@
   --color-ink-2: oklch(34% 0.018 257);
   --color-ink: oklch(24% 0.02 258);
 
-  /* The one dark band (Cobalt ships light with a single graphite beat) */
-  --color-graphite: oklch(22% 0.016 260);
-  --color-graphite-2: oklch(26.5% 0.016 260);
-  --color-graphite-rule: oklch(34% 0.014 260);
-  --color-graphite-ink: oklch(93% 0.008 255);
-  --color-graphite-muted: oklch(70% 0.012 256);
+  /* The one dark band and the code blocks — neutral, never a tinted navy */
+  --color-graphite: #181818;
+  --color-graphite-2: #1f1f1f;
+  --color-graphite-rule: #313131;
+  --color-graphite-ink: oklch(93% 0 0);
+  --color-graphite-muted: oklch(72% 0 0);
 
   /* Accent — a signal, never a flood. Under 5% of any viewport. */
-  --color-accent: oklch(54% 0.196 256);
-  --color-accent-deep: oklch(48% 0.19 256); /* pressed / hovered accent surface */
-  --color-accent-soft: oklch(70% 0.16 256); /* the accent, legible on graphite */
+  /* Chroma held so the sRGB saturation stays under 80% */
+  --color-accent: oklch(54% 0.15 256);
+  --color-accent-deep: oklch(48% 0.13 256); /* pressed / hovered accent surface */
+  --color-accent-soft: oklch(70% 0.12 256); /* the accent, legible on graphite */
   --color-accent-ink: oklch(99% 0.004 256);
-  --color-accent-wash: oklch(54% 0.196 256 / 0.09);
+  --color-accent-wash: oklch(54% 0.15 256 / 0.09);
+  --color-accent-line: oklch(54% 0.15 256 / 0.22); /* hairline round a wash */
+  /* Hero heading — the only gradient on the page, and only on text */
+  --color-hero-from: #000000;
+  --color-hero-to: #666666;
   --color-backdrop: oklch(24% 0.02 258 / 0.4);
 
   /* Brand — the app icon's own colours, lifted from tools/makeicon.swift.
@@ -82,19 +87,19 @@
   --spacing: 0.25rem;
 
   /* ── Structure ─────────────────────────────────────────────────────── */
-  --radius-sm: 6px; /* buttons, inputs — drawn with a ruler, never a pill */
-  --radius-md: 10px; /* readout + template cards */
+  /* Radius: Tailwind's own scale — md for buttons and inputs, lg for cards,
+     xl for floating surfaces (nav, search). */
 
   --shadow-whisper: 0 1px 2px oklch(24% 0.02 258 / 0.05);
   --shadow-lift: 0 18px 48px -28px oklch(24% 0.02 258 / 0.45);
 
   /* ── Motion — three named easings, three buckets ───────────────────── */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --duration-micro: 120ms;
-  --duration-short: 220ms;
-  --duration-long: 420ms;
+  --duration-micro: 300ms; /* colour and opacity */
+  --duration-short: 500ms; /* movement */
+  --duration-long: 700ms; /* scroll reveals */
 
   /* ── Depth — named levels, no freestyle numbers ────────────────────── */
   --z-index-raised: 10;
@@ -115,12 +120,7 @@
 }
 
 :root {
-  /* Height of the sticky nav — scroll anchoring docks beneath it */
-  --banner-height: 60px;
-}
-
-@media (width >= 60rem) {
-  :root {
-    --banner-height: 68px;
-  }
+  /* Height of the floating nav, offset included — scroll anchoring docks
+     beneath it */
+  --banner-height: 68px;
 }

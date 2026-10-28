@@ -14,6 +14,7 @@
     "deploy": "pnpm run build && wrangler deploy"
   },
   "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
     "@tanstack/react-router": "^1.170.23",
     "@tanstack/react-start": "^1.168.40",
     "posthog-js": "^1.418.1",

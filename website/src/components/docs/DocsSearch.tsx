@@ -151,14 +151,14 @@ export function DocsSearch({
 
   return (
     <div
-      className="fixed inset-0 z-modal flex items-start justify-center bg-backdrop px-4 pt-[12vh] backdrop-blur-[2px]"
+      className="fixed inset-0 z-modal flex items-start justify-center bg-backdrop px-4 pt-[12vh] backdrop-blur-xs"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={ui.search}
-        className="search-panel w-full max-w-[36rem] overflow-hidden rounded-md border border-rule bg-paper shadow-lift"
+        className="search-panel w-full max-w-xl overflow-hidden rounded-xl border border-rule bg-paper shadow-lift"
         onClick={(event) => event.stopPropagation()}
         onKeyDown={onKeyDown}
       >
@@ -173,7 +173,7 @@ export function DocsSearch({
             aria-label={ui.search}
             className="min-h-14 flex-1 bg-transparent text-md text-ink outline-none placeholder:text-neutral"
           />
-          <kbd className="rounded-[4px] border border-rule px-1.5 font-mono text-2xs text-neutral">
+          <kbd className="rounded-sm border border-rule px-2 font-mono text-2xs text-neutral">
             esc
           </kbd>
         </div>
@@ -212,7 +212,11 @@ export function DocsSearch({
           )
         ) : null}
 
-        <p className="mono-label px-4 py-3">{ui.searchHint}</p>
+        <p className="mono-label flex flex-wrap gap-x-4 gap-y-1 px-4 py-3">
+          {ui.searchHint.map((part) => (
+            <span key={part}>{part}</span>
+          ))}
+        </p>
       </div>
     </div>
   )

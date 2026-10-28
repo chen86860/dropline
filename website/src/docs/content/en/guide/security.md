@@ -100,6 +100,15 @@ can delete it, and in Imgur's case anonymous uploads have no owner and no
 guarantee. Nothing Dropline does changes that. For anything you need to keep,
 use storage you control.
 
+## This website
+
+The app sends nothing about you; this website does count visits. Page views
+are recorded with [PostHog](https://posthog.com), through the proxy
+`a.emmmm.dev`, so the numbers show which pages people read and which docs they
+cannot find. Automatic click capture is switched off. PostHog stores an
+anonymous visitor ID in a cookie and local storage; block them in your browser
+and the site works exactly the same.
+
 ## Rotating a secret
 
 Change it in the provider's console, then paste the new value into **Settings →

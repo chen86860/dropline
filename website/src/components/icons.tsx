@@ -1,22 +1,34 @@
-/** One icon set, one stroke weight, one corner style — never mixed. */
+import {
+  ArrowRight,
+  BookOpen,
+  BracketsCurly,
+  CaretRight,
+  HardDrives,
+  Lightning,
+  Wrench,
+  FilePdf,
+  FilmStrip,
+  ImageSquare,
+  UploadSimple,
+  List,
+  MagnifyingGlass,
+  X,
+} from '@phosphor-icons/react/ssr'
+
+/** One icon set (Phosphor), one weight, one size — never mixed. The Apple mark
+    is the exception: it is a logo, drawn from Apple's own outline. */
 
 type IconProps = { className?: string }
 
-const STROKE = 'size-[15px] shrink-0 fill-none stroke-current stroke-[1.6]'
+const ICON = 'shrink-0'
+
+/** 16px unless the caller sizes it — two `size-*` classes would fight. */
+function sized(className: string) {
+  return /(^|\s)size-/.test(className) ? className : `size-4 ${className}`
+}
 
 export function ArrowIcon({ className = '' }: IconProps) {
-  return (
-    <svg
-      className={`${STROKE} ${className}`}
-      viewBox="0 0 16 16"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 8h10" />
-      <path d="M9 4l4 4-4 4" />
-    </svg>
-  )
+  return <ArrowRight className={`${ICON} ${sized(className)}`} weight="regular" aria-hidden />
 }
 
 /**
@@ -68,76 +80,29 @@ export function AppIcon({
 }
 
 export function SearchIcon({ className = '' }: IconProps) {
-  return (
-    <svg
-      className={`${STROKE} ${className}`}
-      viewBox="0 0 16 16"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="7" cy="7" r="4.25" />
-      <path d="M10.2 10.2 13.5 13.5" />
-    </svg>
-  )
+  return <MagnifyingGlass className={`${ICON} ${sized(className)}`} weight="regular" aria-hidden />
 }
 
 export function ChevronIcon({ className = '' }: IconProps) {
-  return (
-    <svg
-      className={`${STROKE} ${className}`}
-      viewBox="0 0 16 16"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 3.5 10.5 8 6 12.5" />
-    </svg>
-  )
+  return <CaretRight className={`${ICON} ${sized(className)}`} weight="regular" aria-hidden />
 }
 
-export function MenuIcon({ className = '' }: IconProps) {
+/**
+ * The menu toggle: the list and the cross are stacked and trade places, so
+ * opening the menu reads as one glyph turning into the other rather than a swap.
+ */
+export function MenuToggleIcon({ open, className = '' }: IconProps & { open: boolean }) {
+  const glyph = `${ICON} size-4 col-start-1 row-start-1 transition duration-short ease-out`
   return (
-    <svg
-      className={`${STROKE} ${className}`}
-      viewBox="0 0 16 16"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M2.5 4.5h11" />
-      <path d="M2.5 8h11" />
-      <path d="M2.5 11.5h11" />
-    </svg>
-  )
-}
-
-export function CloseIcon({ className = '' }: IconProps) {
-  return (
-    <svg
-      className={`${STROKE} ${className}`}
-      viewBox="0 0 16 16"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M4 4l8 8" />
-      <path d="M12 4l-8 8" />
-    </svg>
+    <span className={`inline-grid ${className}`} aria-hidden="true">
+      <List className={`${glyph} ${open ? 'rotate-90 opacity-0' : ''}`} weight="regular" />
+      <X className={`${glyph} ${open ? '' : '-rotate-90 opacity-0'}`} weight="regular" />
+    </span>
   )
 }
 
 export function BookIcon({ className = '' }: IconProps) {
-  return (
-    <svg
-      className={`${STROKE} ${className}`}
-      viewBox="0 0 16 16"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M2.5 3.5A1 1 0 0 1 3.5 2.5H7a1.5 1.5 0 0 1 1.5 1.5v9A1.2 1.2 0 0 0 7.3 12H3.5a1 1 0 0 1-1-1z" />
-      <path d="M13.5 3.5a1 1 0 0 0-1-1H9A1.5 1.5 0 0 0 7.5 4v9A1.2 1.2 0 0 1 8.7 12h3.8a1 1 0 0 0 1-1z" />
-    </svg>
-  )
+  return <BookOpen className={`${ICON} ${sized(className)}`} weight="regular" aria-hidden />
 }
 
 /**
@@ -146,12 +111,31 @@ export function BookIcon({ className = '' }: IconProps) {
  */
 export function AppleIcon({ className = '' }: IconProps) {
   return (
-    <svg
-      className={`size-4 shrink-0 fill-current ${className}`}
-      viewBox="0 0 16 16"
-      aria-hidden="true"
-    >
+    <svg className={`${ICON} ${sized(className)} fill-current`} viewBox="0 0 16 16" aria-hidden="true">
       <path d="M11.03 8.52c-.02-1.6 1.31-2.37 1.37-2.41-.75-1.09-1.91-1.24-2.32-1.26-.99-.1-1.93.58-2.43.58-.5 0-1.27-.57-2.09-.55-1.07.02-2.06.62-2.61 1.58-1.11 1.93-.28 4.78.8 6.34.53.76 1.16 1.62 1.99 1.59.8-.03 1.1-.52 2.07-.52.96 0 1.24.52 2.09.5.86-.01 1.4-.78 1.93-1.55.61-.89.86-1.75.87-1.79-.02-.01-1.67-.64-1.69-2.54zM9.47 3.8c.44-.53.74-1.27.66-2.01-.63.03-1.4.42-1.86.95-.41.47-.77 1.23-.67 1.95.7.06 1.42-.36 1.87-.89z" />
     </svg>
   )
+}
+
+export function UploadIcon({ className = '' }: IconProps) {
+  return <UploadSimple className={`${ICON} ${sized(className)}`} weight="regular" aria-hidden />
+}
+
+/** The three kinds of file the hero demo cycles through. */
+export function FileKindIcon({ kind, className = '' }: IconProps & { kind: 'image' | 'video' | 'pdf' }) {
+  const Glyph = kind === 'image' ? ImageSquare : kind === 'video' ? FilmStrip : FilePdf
+  return <Glyph className={`${ICON} ${sized(className)}`} weight="regular" aria-hidden />
+}
+
+/** One glyph per docs entry point on the landing page, keyed by slug. */
+const DOC_GLYPHS = {
+  'getting-started/quickstart': Lightning,
+  'hosts/overview': HardDrives,
+  'guide/templates': BracketsCurly,
+  'guide/troubleshooting': Wrench,
+} as const
+
+export function DocIcon({ slug, className = '' }: IconProps & { slug: string }) {
+  const Glyph = DOC_GLYPHS[slug as keyof typeof DOC_GLYPHS] ?? BookOpen
+  return <Glyph className={`${ICON} ${sized(className)}`} weight="regular" aria-hidden />
 }

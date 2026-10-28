@@ -12,14 +12,14 @@ import { useReveal } from '../lib/motion'
  */
 export function Reveal({
   as: Tag = 'div',
-  delay = 0,
+  step = 0,
   className = '',
   children,
   ...rest
 }: {
   as?: ElementType
-  /** Stagger, in milliseconds, for items revealed as a group. */
-  delay?: number
+  /** Stagger position (0–4) for items revealed as a group, 80ms apart. */
+  step?: number
   className?: string
   children: ReactNode
   [key: string]: unknown
@@ -31,7 +31,7 @@ export function Reveal({
       ref={ref}
       data-reveal=""
       className={className}
-      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
+      data-step={step ? Math.min(step, 4) : undefined}
       {...rest}
     >
       {children}
