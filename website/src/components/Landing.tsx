@@ -1,26 +1,26 @@
-import { FlowDiagram } from './FlowDiagram'
-import { HeroBackdrop } from './HeroBackdrop'
-import { HeroDemo } from './HeroDemo'
-import { TemplateResolver } from './TemplateResolver'
-import { AppleIcon, ArrowIcon, BookIcon, DocIcon } from './icons'
-import { Reveal } from './Reveal'
-import { SiteFooter } from './SiteFooter'
-import { SHELL, SiteHeader } from './SiteHeader'
-import { CONTENT, DOWNLOAD_DMG, type Lang } from '../content'
-import { docHref } from '../docs/routes'
-import { AppLink } from '../lib/links'
+import { FlowDiagram } from './FlowDiagram';
+import { HeroBackdrop } from './HeroBackdrop';
+import { HeroDemo } from './HeroDemo';
+import { TemplateResolver } from './TemplateResolver';
+import { AppleIcon, ArrowIcon, BookIcon, DocIcon } from './icons';
+import { Reveal } from './Reveal';
+import { SiteFooter } from './SiteFooter';
+import { SHELL, SiteHeader } from './SiteHeader';
+import { CONTENT, DOWNLOAD_DMG, type Lang } from '../content';
+import { docHref } from '../docs/routes';
+import { AppLink } from '../lib/links';
 
 /** Split Studio: text half and proof half, and the pairing flips down the page. */
-const SPLIT = 'grid grid-cols-[minmax(0,1fr)] gap-10 xl:gap-24 xl:items-center'
-const SPLIT_LEFT = `${SPLIT} xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]`
-const SPLIT_RIGHT = `${SPLIT} xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]`
+const SPLIT = 'grid grid-cols-[minmax(0,1fr)] gap-10 xl:gap-24 xl:items-center';
+const SPLIT_LEFT = `${SPLIT} xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]`;
+const SPLIT_RIGHT = `${SPLIT} xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]`;
 
 /* Bottom padding a step deeper than the top — optically, that reads as even */
-const SECTION = 'border-t border-rule pt-20 pb-24'
+const SECTION = 'border-t border-rule pt-20 pb-24';
 /* Every band below the hero shares one floor height, content centred in it,
    so the page scrolls in an even rhythm. */
-const BAND = 'min-h-160'
-const BAND_STACK = `${BAND} flex flex-col justify-center`
+const BAND = 'min-h-160';
+const BAND_STACK = `${BAND} flex flex-col justify-center`;
 
 /* Each preset's own mark, from Simple Icons / Iconify brand sets or the
    project's site. SM.MS and EasyImage publish no usable icon, so they keep
@@ -33,16 +33,16 @@ const HOST_ICONS: Record<string, string> = {
   'hosts/minio': '/hosts/minio.svg',
   'hosts/imgur': '/hosts/imgur.svg',
   'hosts/lsky-chevereto': '/hosts/lsky.png',
-}
-const HEAD_TITLE = 'text-3xl font-semibold'
-const LEDE = 'max-w-[60ch] text-md text-muted'
+};
+const HEAD_TITLE = 'text-3xl font-semibold';
+const LEDE = 'max-w-[60ch] text-md text-muted';
 
 /* The quieter ask beside a primary button — a link, not a second button */
 const TEXT_LINK =
-  'inline-flex min-h-10 items-center gap-2 text-base font-medium text-ink-2 transition-colors duration-micro ease-out hover:text-accent'
+  'inline-flex min-h-10 items-center gap-2 text-base font-medium text-ink-2 transition-colors duration-micro ease-out hover:text-accent';
 
 export function Landing({ lang }: { lang: Lang }) {
-  const t = CONTENT[lang]
+  const t = CONTENT[lang];
 
   return (
     <>
@@ -53,48 +53,36 @@ export function Landing({ lang }: { lang: Lang }) {
         <section className="relative isolate -mt-(--banner-height) flex min-h-dvh flex-col justify-center pt-(--banner-height)">
           <HeroBackdrop />
           <div className={`${SHELL} ${SPLIT_LEFT} pt-16 pb-24`}>
-          <div>
-            <p className="inline-flex items-center gap-3 rounded-sm border border-rule bg-paper-2 px-3 py-1 font-mono text-2xs tracking-mono text-muted">
-              <AppleIcon className="size-3.5 text-ink" />
-              {t.hero.badge.map((part) => (
-                <span key={part}>{part}</span>
-              ))}
-            </p>
-
-            {/* Balanced wrapping keeps the headline from stranding a single
+            <div>
+              {/* Balanced wrapping keeps the headline from stranding a single
                 glyph on its own line — CJK breaks anywhere, so it needs help. */}
-            <h1 className="hero-title mt-6 text-balance text-display font-semibold">{t.hero.title}</h1>
-            <p className="mt-6 max-w-[46ch] text-md text-muted">{t.hero.lede}</p>
+              <h1 className="hero-title mt-6 text-balance text-display font-semibold">{t.hero.title}</h1>
+              <p className="mt-6 max-w-[46ch] text-md text-muted">{t.hero.lede}</p>
 
-            {/* One button; the docs are a link beside it */}
-            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <a className="btn btn-primary" href={DOWNLOAD_DMG} rel="noopener">
-                <AppleIcon />
-                {t.hero.primary}
-              </a>
-              <AppLink className={TEXT_LINK} href={docHref(lang, '')}>
-                <BookIcon />
-                {t.docsBand.cta}
-              </AppLink>
+              {/* One button; the docs are a link beside it */}
+              <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <a className="btn btn-primary" href={DOWNLOAD_DMG} rel="noopener">
+                  <AppleIcon />
+                  {t.hero.primary}
+                </a>
+                <AppLink className={TEXT_LINK} href={docHref(lang, '')}>
+                  <BookIcon />
+                  {t.docsBand.cta}
+                </AppLink>
+              </div>
             </div>
 
-            <ul className="mt-8 flex flex-wrap gap-x-4 gap-y-2">
-              {t.hero.meta.map((item) => (
-                <li key={item} className="mono-label">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <HeroDemo labels={t.hero.demo} />
+            <HeroDemo labels={t.hero.demo} />
           </div>
         </section>
 
         {/* ── Hosts — two rows drifting in opposite directions, the presets
               above and what the custom engines speak below. Every preset is
               a link into its configuration page. ───────────────────────── */}
-        <section id={t.hosts.id} className={`dots-bg relative isolate border-y border-rule bg-paper-2 pt-20 pb-24 ${BAND_STACK}`}>
+        <section
+          id={t.hosts.id}
+          className={`dots-bg relative isolate border-y border-rule bg-paper-2 pt-20 pb-24 ${BAND_STACK}`}
+        >
           <Reveal className={SHELL}>
             <h2 className={`${HEAD_TITLE} max-w-[18ch]`}>{t.hosts.title}</h2>
             <p className={`${LEDE} mt-4`}>{t.hosts.lede}</p>
@@ -169,9 +157,7 @@ export function Landing({ lang }: { lang: Lang }) {
                   key={item.key}
                   className="grid grid-cols-[6rem_minmax(0,1fr)] items-baseline gap-4 border-b border-rule py-3"
                 >
-                  <span className="font-mono text-2xs tracking-mono text-accent uppercase">
-                    {item.key}
-                  </span>
+                  <span className="font-mono text-2xs tracking-mono text-accent uppercase">{item.key}</span>
                   <span className="text-base text-ink-2">{item.desc}</span>
                 </li>
               ))}
@@ -270,63 +256,57 @@ export function Landing({ lang }: { lang: Lang }) {
         <section id={t.install.id} className={`relative isolate border-t border-rule pt-20 pb-24 ${BAND_STACK}`}>
           <HeroBackdrop />
           <div className={`${SHELL} ${SPLIT_RIGHT}`}>
-          <Reveal className="xl:order-2">
-            <h2 className={`${HEAD_TITLE} max-w-[16ch]`}>{t.install.title}</h2>
-            <p className={`${LEDE} mt-4`}>{t.install.lede}</p>
+            <Reveal className="xl:order-2">
+              <h2 className={`${HEAD_TITLE} max-w-[16ch]`}>{t.install.title}</h2>
+              <p className={`${LEDE} mt-4`}>{t.install.lede}</p>
 
-            <div className="mt-10 grid justify-items-start gap-3">
-              <a className="btn btn-primary" href={DOWNLOAD_DMG} rel="noopener">
-                <AppleIcon />
-                {t.install.cta}
-                <ArrowIcon />
-              </a>
-              <p className="mono-label flex flex-wrap gap-x-4 gap-y-1">
-                {t.install.ctaMeta.map((part) => (
-                  <span key={part}>{part}</span>
-                ))}
-              </p>
+              <div className="mt-10 grid justify-items-start gap-3">
+                <a className="btn btn-primary" href={DOWNLOAD_DMG} rel="noopener">
+                  <AppleIcon />
+                  {t.install.cta}
+                  <ArrowIcon />
+                </a>
+                <p className="mono-label flex flex-wrap gap-x-4 gap-y-1">
+                  {t.install.ctaMeta.map((part) => (
+                    <span key={part}>{part}</span>
+                  ))}
+                </p>
 
-              {/* Homebrew — the second path, deliberately quieter than the button */}
-              <div className="mt-6 grid w-full justify-items-start gap-2">
-                <p className="mono-label">{t.install.brew.label}</p>
-                <code className="break-anywhere block w-full rounded-md border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
-                  <span className="text-neutral select-none">$ </span>
-                  {t.install.brew.command}
-                  <span className="caret" aria-hidden="true" />
-                </code>
-              </div>
-            </div>
-          </Reveal>
-
-          <ol className="grid gap-6 xl:order-1">
-            {t.install.steps.map((step, index) => (
-              <Reveal
-                as="li"
-                key={step.title}
-                step={index}
-                className="grid grid-cols-[2rem_minmax(0,1fr)] gap-4"
-              >
-                <span className="pt-1 font-mono text-2xs tracking-mono text-accent">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div>
-                  <h3 className="text-md font-medium tracking-tight">{step.title}</h3>
-                  <p className="mt-1 max-w-[60ch] text-muted">{step.body}</p>
-                  {step.code ? (
-                    <code className="break-anywhere mt-3 block rounded-md border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
-                      {step.code}
-                    </code>
-                  ) : null}
+                {/* Homebrew — the second path, deliberately quieter than the button */}
+                <div className="mt-6 grid w-full justify-items-start gap-2">
+                  <p className="mono-label">{t.install.brew.label}</p>
+                  <code className="break-anywhere block w-full rounded-md border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
+                    <span className="text-neutral select-none">$ </span>
+                    {t.install.brew.command}
+                    <span className="caret" aria-hidden="true" />
+                  </code>
                 </div>
-              </Reveal>
-            ))}
-          </ol>
+              </div>
+            </Reveal>
+
+            <ol className="grid gap-6 xl:order-1">
+              {t.install.steps.map((step, index) => (
+                <Reveal as="li" key={step.title} step={index} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-4">
+                  <span className="pt-1 font-mono text-2xs tracking-mono text-accent">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <h3 className="text-md font-medium tracking-tight">{step.title}</h3>
+                    <p className="mt-1 max-w-[60ch] text-muted">{step.body}</p>
+                    {step.code ? (
+                      <code className="break-anywhere mt-3 block rounded-md border border-rule bg-paper-2 px-4 py-3 font-mono text-xs text-ink">
+                        {step.code}
+                      </code>
+                    ) : null}
+                  </div>
+                </Reveal>
+              ))}
+            </ol>
           </div>
         </section>
       </main>
 
       <SiteFooter lang={lang} />
     </>
-  )
+  );
 }
-

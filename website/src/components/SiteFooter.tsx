@@ -1,17 +1,15 @@
-
-import { AppIcon } from './icons'
-import { SHELL } from './SiteHeader'
-import { AppLink } from '../lib/links'
-import { CONTENT, PATH_FOR, type Lang } from '../content'
-import { rememberLang } from '../lib/browser'
+import { AppIcon } from './icons';
+import { SHELL } from './SiteHeader';
+import { AppLink } from '../lib/links';
+import { CONTENT, PATH_FOR, type Lang } from '../content';
+import { rememberLang } from '../lib/browser';
 
 /** Ft1 mast-headed footer, shared by the landing page and every docs page. */
 export function SiteFooter({ lang }: { lang: Lang }) {
-  const t = CONTENT[lang]
+  const t = CONTENT[lang];
 
   return (
-    <footer
-      className={`${SHELL} pb-safe border-t border-rule pt-16`}>
+    <footer className={`${SHELL} pb-safe border-t border-rule pt-16`}>
       <p className="flex items-center gap-3 font-display text-2xl font-semibold tracking-display text-ink">
         <AppIcon className="size-8" />
         Dropline
@@ -47,12 +45,6 @@ export function SiteFooter({ lang }: { lang: Lang }) {
           </li>
         ))}
       </ul>
-
-      <p className="mono-label mt-6 flex flex-wrap gap-x-4 gap-y-1">
-        {t.foot.meta.map((part) => (
-          <span key={part}>{part}</span>
-        ))}
-      </p>
     </footer>
-  )
+  );
 }

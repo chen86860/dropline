@@ -34,11 +34,9 @@ export interface Content {
     overview: string;
   };
   hero: {
-    badge: string[];
     title: string;
     lede: string;
     primary: string;
-    meta: string[];
     /** Labels inside the animated demo that replaces the screenshot up top. */
     demo: { drop: string; clipboard: string; copied: string; toast: string };
   };
@@ -102,7 +100,6 @@ export interface Content {
   foot: {
     tagline: string;
     links: { label: string; href: string }[];
-    meta: string[];
   };
 }
 
@@ -127,11 +124,9 @@ const en: Content = {
     overview: 'Overview',
   },
   hero: {
-    badge: ['Native macOS app', 'Swift + SwiftUI'],
     title: 'Drop a file. Get the link.',
     lede: 'Drag, right-click or paste a file. It lands in your own S3, R2 or image host, and the link is already on your clipboard.',
     primary: 'Download for macOS',
-    meta: ['macOS 13+', 'Apple Silicon', 'Free', 'MIT'],
     demo: {
       drop: 'Drop files here',
       clipboard: 'Clipboard',
@@ -192,7 +187,14 @@ const en: Content = {
       { label: 'EasyImage', slug: 'hosts/easyimage' },
     ],
     presetsCta: 'Every preset has a configuration page →',
-    engines: ['multipart/form-data', 'Binary PUT / POST', 'S3-compatible (SigV4)', 'Bearer token', 'Basic auth', 'Custom headers'],
+    engines: [
+      'multipart/form-data',
+      'Binary PUT / POST',
+      'S3-compatible (SigV4)',
+      'Bearer token',
+      'Basic auth',
+      'Custom headers',
+    ],
   },
   docsBand: {
     id: 'docs',
@@ -290,7 +292,6 @@ const en: Content = {
       { label: 'Privacy', href: '/docs/guide/security#this-website' },
       { label: '中文', href: PATH_FOR.zh },
     ],
-    meta: ['MIT licensed', 'macOS 13+', 'Built by chen86860'],
   },
 };
 
@@ -315,11 +316,9 @@ const zh: Content = {
     overview: '产品介绍',
   },
   hero: {
-    badge: ['原生 macOS 应用', 'Swift + SwiftUI'],
     title: '拖进去，链接就在剪贴板。',
     lede: '拖进去、右键或粘贴，文件直达你自己的 S3、R2 或图床，链接自动复制好。',
     primary: '下载 macOS 版',
-    meta: ['macOS 13+', 'Apple Silicon', '免费', 'MIT'],
     demo: {
       drop: '把文件拖到这里',
       clipboard: '剪贴板',
@@ -380,7 +379,14 @@ const zh: Content = {
       { label: 'EasyImage', slug: 'hosts/easyimage' },
     ],
     presetsCta: '每个预设都有一页配置说明 →',
-    engines: ['multipart/form-data', '二进制 PUT / POST', 'S3 兼容（SigV4）', 'Bearer token', 'Basic 鉴权', '自定义请求头'],
+    engines: [
+      'multipart/form-data',
+      '二进制 PUT / POST',
+      'S3 兼容（SigV4）',
+      'Bearer token',
+      'Basic 鉴权',
+      '自定义请求头',
+    ],
   },
   docsBand: {
     id: 'docs',
@@ -478,7 +484,6 @@ const zh: Content = {
       { label: '隐私', href: '/zh/docs/guide/security#关于本网站' },
       { label: 'English', href: PATH_FOR.en },
     ],
-    meta: ['MIT 协议', 'macOS 13+', '由 chen86860 开发'],
   },
 };
 
